@@ -50,10 +50,8 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
 
   const formatted = useMemo(() => {
     if (body == null) return null;
-    const isJsonCt = (contentType ?? "").toLowerCase().includes("json");
-    if (isJsonCt) return tryPrettyJson(body);
-    return { isJson: false, text: body };
-  }, [body, contentType]);
+    return tryPrettyJson(body);
+  }, [body]);
 
   const parsedJson = useMemo<object | null>(() => {
     if (!formatted?.isJson) return null;
@@ -64,6 +62,8 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
       return null;
     }
   }, [formatted]);
+
+  const isMultipart = (contentType ?? "").toLowerCase().startsWith("multipart/form-data");
 
   if (formatted === null) {
     return <p className="px-1 py-4 text-sm text-muted-foreground">No body</p>;
@@ -78,8 +78,13 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
   return (
     <div className="overflow-hidden rounded-md border border-border/50">
       <div className="flex items-center justify-between border-b border-border/40 bg-muted/30 px-3 py-2">
-        <span className="font-mono text-xs text-muted-foreground">
+        <span className="truncate font-mono text-xs text-muted-foreground">
           {contentType ?? "no content-type"}
+          {isMultipart && parsedJson !== null && (
+            <span className="ml-2 rounded-sm bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">
+              text fields
+            </span>
+          )}
           {bodyTruncated && (
             <span className="ml-2 rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-amber-300">
               truncated
