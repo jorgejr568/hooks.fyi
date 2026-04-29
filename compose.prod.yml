@@ -6,8 +6,8 @@
 #   cp .env.example .env       # then edit secrets
 #   docker compose -f compose.prod.yml up -d --build
 #
-# The app runs Prisma migrations on first startup. Postgres data and MinIO
-# objects persist in named volumes.
+# A one-shot `migrate` service runs `prisma migrate deploy` before the app
+# starts. Postgres data and MinIO objects persist in named volumes.
 
 services:
   postgres:
@@ -57,6 +57,17 @@ services:
         mc mb --ignore-existing local/"$$S3_BUCKET" &&
         echo "MinIO bucket $$S3_BUCKET ready"
 
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-hooks}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-hooksfyi}?schema=public
+
   app:
     build:
       context: .
@@ -66,6 +77,8 @@ services:
       postgres:
         condition: service_healthy
       minio-init:
+        condition: service_completed_successfully
+      migrate:
         condition: service_completed_successfully
     ports:
       - "${APP_PORT:-3000}:3000"

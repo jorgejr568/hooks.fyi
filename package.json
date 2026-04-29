@@ -13,6 +13,7 @@
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d postgres minio minio-init",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio"
   },

@@ -1,0 +1,34 @@
+# syntax=docker/dockerfile:1.7
+#
+# One-shot migration image. Runs `prisma migrate deploy` against the
+# DATABASE_URL provided at runtime, then exits.
+#
+#   docker build -f Dockerfile.migrate -t hooksfyi-migrate:latest .
+#   docker run --rm -e DATABASE_URL=... hooksfyi-migrate:latest
+
+ARG NODE_VERSION=22-alpine
+
+FROM node:${NODE_VERSION} AS base
+RUN corepack enable
+WORKDIR /app
+
+# ---- dependencies (production + prisma CLI) ----
+FROM base AS deps
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+# ---- runner ----
+FROM base AS runner
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+
+# Skip env-file loading: prisma.config.ts uses dotenv to source .env*, but in
+# the container we want to read DATABASE_URL straight from the process env.
+ENV DOTENV_CONFIG_PATH=/dev/null
+
+CMD ["pnpm", "exec", "prisma", "migrate", "deploy"]

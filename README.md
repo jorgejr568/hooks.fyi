@@ -50,7 +50,11 @@ $EDITOR .env                     # set strong POSTGRES_PASSWORD + S3_*
 docker compose -f compose.prod.yml up -d --build
 ```
 
-This builds the Next.js standalone image, brings up Postgres + MinIO, creates the bucket, and starts the app on port `${APP_PORT:-3000}`. Data persists in named volumes.
+This builds two images (the app and a one-shot migrator), brings up Postgres + MinIO, creates the bucket, runs `prisma migrate deploy`, then starts the app on port `${APP_PORT:-3000}`. Data persists in named volumes. To re-run migrations later (after pulling new schema changes), do:
+
+```bash
+docker compose -f compose.prod.yml up --build migrate
+```
 
 ### Option 2 — bring your own Postgres + S3
 
@@ -71,7 +75,12 @@ docker run --rm -p 3000:3000 \
   hooksfyi:latest
 ```
 
-Run `pnpm prisma migrate deploy` once against your managed Postgres before the first boot. The image uses Next.js [standalone output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output) so it ships only the runtime files it actually needs (`server.js` + the minimal `node_modules` slice, plus `.next/static` and `public/`). Final image is roughly 200 MB.
+Run migrations against your managed Postgres before the first boot. Either locally with `pnpm db:deploy` (needs `DATABASE_URL` set), or by building and running the dedicated migrator image:
+
+```bash
+docker build -f Dockerfile.migrate -t hooksfyi-migrate:latest .
+docker run --rm -e DATABASE_URL="postgresql://..." hooksfyi-migrate:latest
+``` The image uses Next.js [standalone output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output) so it ships only the runtime files it actually needs (`server.js` + the minimal `node_modules` slice, plus `.next/static` and `public/`). Final image is roughly 200 MB.
 
 | var | example |
 | --- | --- |
