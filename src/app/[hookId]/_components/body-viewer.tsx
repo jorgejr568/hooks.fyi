@@ -68,8 +68,11 @@ function extensionFor(ct: string | null): string {
   return map[main] ?? "bin";
 }
 
+type ViewMode = "decoded" | "raw";
+
 export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
   const [copied, setCopied] = useState(false);
+  const [mode, setMode] = useState<ViewMode>("decoded");
 
   const lowerMain = (contentType ?? "").toLowerCase().split(";")[0].trim();
   const isMultipart = lowerMain.startsWith("multipart/form-data");
@@ -121,6 +124,9 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
     return <p className="px-1 py-4 text-sm text-muted-foreground">No body</p>;
   }
 
+  const hasDecoded = parsedJson !== null || dataUri !== null;
+  const showDecoded = hasDecoded && mode === "decoded";
+
   const onCopy = async () => {
     await navigator.clipboard.writeText(formatted.text);
     setCopied(true);
@@ -165,6 +171,32 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
           )}
         </span>
         <div className="flex shrink-0 items-center gap-1">
+          {hasDecoded && (
+            <div className="flex overflow-hidden rounded-md border border-border/60 bg-background/40 text-[10px]">
+              <button
+                onClick={() => setMode("decoded")}
+                className={
+                  "px-2 py-0.5 font-medium transition " +
+                  (mode === "decoded"
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:text-foreground")
+                }
+              >
+                Decoded
+              </button>
+              <button
+                onClick={() => setMode("raw")}
+                className={
+                  "border-l border-border/60 px-2 py-0.5 font-medium transition " +
+                  (mode === "raw"
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:text-foreground")
+                }
+              >
+                Raw
+              </button>
+            </div>
+          )}
           {bodyIsBase64 && (
             <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onDownload} title="Download body">
               <Download className="size-3" />
@@ -176,7 +208,7 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
         </div>
       </div>
 
-      {dataUri && isImage && (
+      {showDecoded && dataUri && isImage && (
         <div className="flex max-h-[60svh] items-center justify-center overflow-auto bg-[image:repeating-linear-gradient(45deg,oklch(0.10_0_0)_0_8px,oklch(0.13_0_0)_8px_16px)] p-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -187,7 +219,7 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
         </div>
       )}
 
-      {dataUri && isPdf && (
+      {showDecoded && dataUri && isPdf && (
         <iframe
           src={dataUri}
           className="h-[70svh] w-full bg-zinc-950"
@@ -195,19 +227,19 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
         />
       )}
 
-      {dataUri && isAudio && (
+      {showDecoded && dataUri && isAudio && (
         <div className="flex items-center justify-center p-4">
           <audio controls src={dataUri} className="w-full max-w-md" />
         </div>
       )}
 
-      {dataUri && isVideo && (
+      {showDecoded && dataUri && isVideo && (
         <div className="flex items-center justify-center bg-black p-2">
           <video controls src={dataUri} className="max-h-[70svh] max-w-full" />
         </div>
       )}
 
-      {!dataUri && parsedJson !== null && (
+      {showDecoded && !dataUri && parsedJson !== null && (
         <div className="max-h-[60svh] overflow-auto px-3 py-2 font-mono text-xs">
           <JsonView
             value={parsedJson}
@@ -222,9 +254,9 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
         </div>
       )}
 
-      {!dataUri && parsedJson === null && (
+      {(!showDecoded || (!dataUri && parsedJson === null)) && (
         <>
-          {isBinaryPreviewable && bodyTruncated && (
+          {isBinaryPreviewable && bodyTruncated && mode === "decoded" && (
             <div className="border-b border-border/40 bg-amber-500/5 px-3 py-2 text-xs text-amber-300/90">
               Body too large to preview. Showing the truncated base64 payload below.
             </div>
