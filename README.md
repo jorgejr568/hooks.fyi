@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# hooks.fyi
 
-## Getting Started
+Disposable HTTP request bins. Create a URL, send any request to it (any method, any body, files), watch every byte show up in real time.
 
-First, run the development server:
+## Stack
+
+- Next.js 15 (App Router) + TypeScript
+- Postgres 16 + Prisma
+- S3-compatible object storage (MinIO locally, any S3 in prod)
+- shadcn/ui on Tailwind v4 with a deep-dark theme
+- Vitest
+
+## Local development
+
+Prereqs: Node 20+, pnpm 9+, Docker.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local       # already populated for local docker
+pnpm db:up                       # starts postgres + minio in docker
+pnpm db:migrate                  # applies prisma migrations
+pnpm dev                         # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+MinIO console: http://localhost:9101 (`hooksminio` / `hooksminio`).
+Postgres: `postgres://hooks:hooks@localhost:5433/hooksfyi`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tests
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm test                        # runs Vitest (uses .env.test against the same docker postgres)
+```
 
-## Learn More
+## How it works
 
-To learn more about Next.js, take a look at the following resources:
+- `POST /api/hooks` creates a hook with a UUID id.
+- Anything sent to `/h/{hookId}` (any HTTP method) gets parsed and persisted:
+  - text/JSON/form bodies → `Request.body` in Postgres (truncated past `MAX_BODY_BYTES`, default 1 MB)
+  - multipart files → uploaded to S3, metadata stored as `Attachment`
+- The dashboard at `/{hookId}` subscribes to an SSE stream and renders new requests as they arrive.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Production deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Set in your environment:
 
-## Deploy on Vercel
+| var | example |
+| --- | --- |
+| `DATABASE_URL` | `postgresql://...` (managed Postgres) |
+| `S3_ENDPOINT` | `https://s3.us-east-1.amazonaws.com` |
+| `S3_REGION` | `us-east-1` |
+| `S3_BUCKET` | `hooks-fyi-prod` |
+| `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | IAM creds |
+| `S3_FORCE_PATH_STYLE` | `false` (real S3) / `true` (MinIO) |
+| `NEXT_PUBLIC_APP_URL` | `https://hooks.fyi` |
+| `HOOK_PUBLIC_HOST` | `hooks.fyi` |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The app is single-process, so SSE pub/sub uses an in-memory `EventEmitter`. To run multiple instances, swap `src/lib/events/hook-events.ts` for a Redis or Postgres `LISTEN/NOTIFY`-backed implementation.
