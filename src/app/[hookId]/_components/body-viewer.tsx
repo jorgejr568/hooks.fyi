@@ -53,7 +53,26 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
     return tryPrettyJson(body);
   }, [body]);
 
+  const isMultipart = (contentType ?? "").toLowerCase().startsWith("multipart/form-data");
+  const isFormUrlEncoded = (contentType ?? "")
+    .toLowerCase()
+    .startsWith("application/x-www-form-urlencoded");
+
   const parsedJson = useMemo<object | null>(() => {
+    if (body == null) return null;
+    if (isFormUrlEncoded) {
+      try {
+        const params = new URLSearchParams(body);
+        const out: Record<string, string | string[]> = {};
+        for (const key of new Set(Array.from(params.keys()))) {
+          const all = params.getAll(key);
+          out[key] = all.length === 1 ? all[0] : all;
+        }
+        return Object.keys(out).length > 0 ? out : null;
+      } catch {
+        return null;
+      }
+    }
     if (!formatted?.isJson) return null;
     try {
       const v = JSON.parse(formatted.text);
@@ -61,9 +80,7 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
     } catch {
       return null;
     }
-  }, [formatted]);
-
-  const isMultipart = (contentType ?? "").toLowerCase().startsWith("multipart/form-data");
+  }, [body, formatted, isFormUrlEncoded]);
 
   if (formatted === null) {
     return <p className="px-1 py-4 text-sm text-muted-foreground">No body</p>;
@@ -83,6 +100,11 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
           {isMultipart && parsedJson !== null && (
             <span className="ml-2 rounded-sm bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">
               text fields
+            </span>
+          )}
+          {isFormUrlEncoded && parsedJson !== null && (
+            <span className="ml-2 rounded-sm bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">
+              decoded
             </span>
           )}
           {bodyTruncated && (
