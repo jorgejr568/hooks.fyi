@@ -1,6 +1,63 @@
+import busboy from "busboy";
+import { Readable } from "node:stream";
 import type { ParsedRequest, ParseOptions, ParsedFilePart } from "./types";
 
 const TEXTUAL_CT = /^(application\/(json|x-www-form-urlencoded|xml|.*\+json|.*\+xml)|text\/.*)/i;
+
+function parseMultipart(
+  buf: Buffer,
+  contentType: string,
+  maxFileBytes: number,
+): Promise<{ textParts: Record<string, string | string[]>; files: ParsedFilePart[] }> {
+  return new Promise((resolve, reject) => {
+    const textParts: Record<string, string | string[]> = {};
+    const files: ParsedFilePart[] = [];
+    let bb: ReturnType<typeof busboy>;
+    try {
+      bb = busboy({ headers: { "content-type": contentType } });
+    } catch (err) {
+      reject(err);
+      return;
+    }
+
+    bb.on("field", (name, value) => {
+      const existing = textParts[name];
+      if (existing === undefined) textParts[name] = value;
+      else if (Array.isArray(existing)) existing.push(value);
+      else textParts[name] = [existing, value];
+    });
+
+    bb.on("file", (name, stream, info) => {
+      const chunks: Buffer[] = [];
+      let total = 0;
+      stream.on("data", (chunk: Buffer) => {
+        if (total >= maxFileBytes) return;
+        const room = maxFileBytes - total;
+        if (chunk.length > room) {
+          chunks.push(chunk.subarray(0, room));
+          total += room;
+        } else {
+          chunks.push(chunk);
+          total += chunk.length;
+        }
+      });
+      stream.on("end", () => {
+        files.push({
+          fieldName: name,
+          fileName: info.filename || null,
+          contentType: info.mimeType || null,
+          bytes: Buffer.concat(chunks),
+        });
+      });
+      stream.on("error", reject);
+    });
+
+    bb.on("close", () => resolve({ textParts, files }));
+    bb.on("error", reject);
+
+    Readable.from(buf).pipe(bb);
+  });
+}
 
 function pickIp(headers: Headers): string | null {
   const xff = headers.get("x-forwarded-for");
@@ -42,49 +99,25 @@ export async function parseRequest(
   const hasBody = !["GET", "HEAD"].includes(req.method.toUpperCase());
 
   if (hasBody) {
+    const rawBuf = Buffer.from(await req.arrayBuffer());
+    bodySize = rawBuf.byteLength;
     const isMultipart = contentType?.toLowerCase().startsWith("multipart/form-data");
     let multipartParsed = false;
-    let rawBuf: Buffer | null = null;
 
-    if (isMultipart) {
-      const cloned = req.clone();
+    if (isMultipart && rawBuf.byteLength > 0) {
       try {
-        const fd = await req.formData();
-        const textParts: Record<string, string | string[]> = {};
-        for (const [name, value] of fd.entries()) {
-          if (typeof value === "string") {
-            const existing = textParts[name];
-            if (existing === undefined) {
-              textParts[name] = value;
-            } else if (Array.isArray(existing)) {
-              existing.push(value);
-            } else {
-              textParts[name] = [existing, value];
-            }
-          } else {
-            const buf = new Uint8Array(await value.arrayBuffer());
-            const truncated = buf.byteLength > opts.maxFileBytes;
-            files.push({
-              fieldName: name,
-              fileName: value.name || null,
-              contentType: value.type || null,
-              bytes: truncated ? buf.slice(0, opts.maxFileBytes) : buf,
-            });
-          }
-        }
-        const serialized = JSON.stringify(textParts);
+        const result = await parseMultipart(rawBuf, contentType!, opts.maxFileBytes);
+        files.push(...result.files);
+        const serialized = JSON.stringify(result.textParts);
         bodySize = Buffer.byteLength(serialized);
         body = serialized.length > 0 ? serialized : null;
         multipartParsed = true;
       } catch (err) {
         console.error("[ingest] multipart parse failed, falling back to raw:", err);
-        rawBuf = Buffer.from(await cloned.arrayBuffer());
       }
     }
 
     if (!multipartParsed) {
-      if (!rawBuf) rawBuf = Buffer.from(await req.arrayBuffer());
-      bodySize = rawBuf.byteLength;
       const slice = rawBuf.byteLength > opts.maxBodyBytes ? rawBuf.subarray(0, opts.maxBodyBytes) : rawBuf;
       bodyTruncated = rawBuf.byteLength > opts.maxBodyBytes;
       if (contentType && TEXTUAL_CT.test(contentType)) {
