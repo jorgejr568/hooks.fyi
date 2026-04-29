@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect, KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Copy, Check, Trash2, ArrowLeft } from "lucide-react";
+import { Copy, Check, Trash2, ArrowLeft, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -23,10 +23,22 @@ interface Props {
   ingestUrl: string;
 }
 
-export function HookHeader({ hookId, name, createdAt, ingestUrl }: Props) {
+export function HookHeader({ hookId, name: initialName, createdAt, ingestUrl }: Props) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [deletePending, startDelete] = useTransition();
+
+  const [name, setName] = useState<string | null>(initialName);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(initialName ?? "");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
 
   const onCopy = async () => {
     await navigator.clipboard.writeText(ingestUrl);
@@ -46,6 +58,47 @@ export function HookHeader({ hookId, name, createdAt, ingestUrl }: Props) {
     });
   };
 
+  const startEdit = () => {
+    setDraft(name ?? "");
+    setEditing(true);
+  };
+
+  const commit = async () => {
+    if (!editing) return;
+    const trimmed = draft.trim();
+    const next = trimmed.length === 0 ? null : trimmed;
+    setEditing(false);
+    if (next === name) return;
+    const previous = name;
+    setName(next);
+    try {
+      const res = await fetch(`/api/hooks/${hookId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: next }),
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+    } catch {
+      setName(previous);
+      toast.error("Could not save name");
+    }
+  };
+
+  const cancel = () => {
+    setDraft(name ?? "");
+    setEditing(false);
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commit();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      cancel();
+    }
+  };
+
   return (
     <header className="border-b border-border/50 bg-background/60 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
@@ -56,9 +109,27 @@ export function HookHeader({ hookId, name, createdAt, ingestUrl }: Props) {
           >
             <ArrowLeft className="size-3" /> hooks.fyi
           </Link>
-          <h1 className="truncate text-lg font-semibold tracking-tight">
-            {name ?? "Untitled hook"}
-          </h1>
+          {editing ? (
+            <input
+              ref={inputRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={onKeyDown}
+              maxLength={120}
+              placeholder="Untitled hook"
+              className="w-full max-w-md rounded-md border border-border/60 bg-muted/30 px-2 py-1 text-lg font-semibold tracking-tight outline-none focus:border-primary"
+            />
+          ) : (
+            <h1
+              onDoubleClick={startEdit}
+              title="Double-click to rename"
+              className="group inline-flex cursor-text items-center gap-1.5 truncate text-lg font-semibold tracking-tight"
+            >
+              {name ?? <span className="text-muted-foreground">Untitled hook</span>}
+              <Pencil className="size-3 text-muted-foreground/0 transition group-hover:text-muted-foreground/70" />
+            </h1>
+          )}
           <p className="text-xs text-muted-foreground">
             created {new Date(createdAt).toLocaleString()}
           </p>
