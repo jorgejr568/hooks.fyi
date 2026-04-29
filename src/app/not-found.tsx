@@ -9,7 +9,7 @@ export default function NotFound() {
       <p className="mt-3 text-muted-foreground">
         The hook you&rsquo;re looking for has been deleted or never existed.
       </p>
-      <Button className="mt-6" render={<Link href="/" />}>
+      <Button className="mt-6" nativeButton={false} render={<Link href="/" />}>
         Create a new hook
       </Button>
     </main>

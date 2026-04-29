@@ -91,6 +91,7 @@ function AttachmentRow({ attachment, hookId }: { attachment: Attachment; hookId:
         <Button
           size="sm"
           variant="secondary"
+          nativeButton={false}
           className="shrink-0"
           render={<a href={baseUrl} download={attachment.fileName ?? undefined} />}
         >
