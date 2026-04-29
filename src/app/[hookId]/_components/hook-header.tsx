@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Copy, Check, Trash2, ArrowLeft, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { ResponderDialog } from "./responder-dialog";
 
 interface Props {
   hookId: string;
@@ -157,6 +158,8 @@ export function HookHeader({
               · {new Date(createdAt).toLocaleString()}
             </span>
           </div>
+
+          <ResponderDialog hookId={hookId} />
 
           <Dialog>
             <DialogTrigger
