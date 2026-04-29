@@ -1,11 +1,147 @@
-import { Download, FileText } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import {
+  Download,
+  FileText,
+  FileImage,
+  FileAudio,
+  FileVideo,
+  FileType,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { RequestDetail } from "@/types/api";
+
+type Attachment = RequestDetail["attachments"][number];
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} kB`;
   return `${(n / 1024 / 1024).toFixed(2)} MB`;
+}
+
+function categorize(ct: string | null): "image" | "pdf" | "audio" | "video" | "text" | "other" {
+  const main = (ct ?? "").toLowerCase().split(";")[0].trim();
+  if (main.startsWith("image/")) return "image";
+  if (main === "application/pdf") return "pdf";
+  if (main.startsWith("audio/")) return "audio";
+  if (main.startsWith("video/")) return "video";
+  if (main.startsWith("text/") || main === "application/json" || main.endsWith("+json") || main.endsWith("+xml")) return "text";
+  return "other";
+}
+
+function iconFor(category: ReturnType<typeof categorize>) {
+  switch (category) {
+    case "image":
+      return FileImage;
+    case "audio":
+      return FileAudio;
+    case "video":
+      return FileVideo;
+    case "pdf":
+    case "text":
+      return FileType;
+    default:
+      return FileText;
+  }
+}
+
+function AttachmentRow({ attachment }: { attachment: Attachment }) {
+  const category = categorize(attachment.contentType);
+  const previewable = category !== "other";
+  const [open, setOpen] = useState(false);
+  const Icon = iconFor(category);
+  const url = `/api/files/${attachment.id}?inline=1`;
+
+  return (
+    <li>
+      <div className="flex items-center gap-3 px-3 py-2">
+        <Icon className="size-4 shrink-0 text-muted-foreground" />
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-mono text-sm">{attachment.fileName ?? "(unnamed)"}</div>
+          <div className="text-xs text-muted-foreground">
+            <span className="font-mono">{attachment.fieldName ?? "—"}</span>
+            <span aria-hidden> · </span>
+            <span>{attachment.contentType ?? "application/octet-stream"}</span>
+            <span aria-hidden> · </span>
+            <span>{formatBytes(attachment.size)}</span>
+          </div>
+        </div>
+        {previewable && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="shrink-0"
+            onClick={() => setOpen((v) => !v)}
+            title={open ? "Hide preview" : "Show preview"}
+          >
+            {open ? (
+              <ChevronDown className="size-4" />
+            ) : (
+              <ChevronRight className="size-4" />
+            )}
+          </Button>
+        )}
+        <Button
+          size="sm"
+          variant="secondary"
+          className="shrink-0"
+          render={<a href={`/api/files/${attachment.id}`} download={attachment.fileName ?? undefined} />}
+        >
+          <Download className="size-4" />
+        </Button>
+      </div>
+
+      {previewable && (
+        <div
+          className={cn(
+            "grid transition-all",
+            open ? "grid-rows-[1fr] border-t border-border/40" : "grid-rows-[0fr]",
+          )}
+        >
+          <div className="overflow-hidden">
+            {open && (
+              <div className="bg-zinc-950/50">
+                {category === "image" && (
+                  <div className="flex max-h-[60svh] items-center justify-center overflow-auto bg-[image:repeating-linear-gradient(45deg,oklch(0.10_0_0)_0_8px,oklch(0.13_0_0)_8px_16px)] p-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={attachment.fileName ?? "attachment"}
+                      className="max-h-[55svh] max-w-full object-contain"
+                    />
+                  </div>
+                )}
+                {category === "pdf" && (
+                  <iframe src={url} className="h-[70svh] w-full" title={attachment.fileName ?? "pdf"} />
+                )}
+                {category === "audio" && (
+                  <div className="flex items-center justify-center p-4">
+                    <audio controls src={url} className="w-full max-w-md" />
+                  </div>
+                )}
+                {category === "video" && (
+                  <div className="flex items-center justify-center bg-black p-2">
+                    <video controls src={url} className="max-h-[70svh] max-w-full" />
+                  </div>
+                )}
+                {category === "text" && (
+                  <iframe
+                    src={url}
+                    className="h-[40svh] w-full bg-zinc-950"
+                    title={attachment.fileName ?? "text"}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </li>
+  );
 }
 
 export function AttachmentsList({ items }: { items: RequestDetail["attachments"] }) {
@@ -15,26 +151,7 @@ export function AttachmentsList({ items }: { items: RequestDetail["attachments"]
   return (
     <ul className="divide-y divide-border/40 overflow-hidden rounded-md border border-border/50">
       {items.map((a) => (
-        <li key={a.id} className="flex items-center gap-3 px-3 py-2">
-          <FileText className="size-4 text-muted-foreground" />
-          <div className="min-w-0 flex-1">
-            <div className="truncate font-mono text-sm">{a.fileName ?? "(unnamed)"}</div>
-            <div className="text-xs text-muted-foreground">
-              <span className="font-mono">{a.fieldName ?? "—"}</span>
-              <span aria-hidden> · </span>
-              <span>{a.contentType ?? "application/octet-stream"}</span>
-              <span aria-hidden> · </span>
-              <span>{formatBytes(a.size)}</span>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            variant="secondary"
-            render={<a href={`/api/files/${a.id}`} download />}
-          >
-            <Download className="size-4" />
-          </Button>
-        </li>
+        <AttachmentRow key={a.id} attachment={a} />
       ))}
     </ul>
   );
