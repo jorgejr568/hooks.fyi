@@ -42,34 +42,44 @@ export async function parseRequest(
   const hasBody = !["GET", "HEAD"].includes(req.method.toUpperCase());
 
   if (hasBody) {
-    if (contentType?.toLowerCase().startsWith("multipart/form-data")) {
-      const fd = await req.formData();
-      const textParts: Record<string, string | string[]> = {};
-      for (const [name, value] of fd.entries()) {
-        if (typeof value === "string") {
-          const existing = textParts[name];
-          if (existing === undefined) {
-            textParts[name] = value;
-          } else if (Array.isArray(existing)) {
-            existing.push(value);
+    const isMultipart = contentType?.toLowerCase().startsWith("multipart/form-data");
+    let multipartParsed = false;
+
+    if (isMultipart) {
+      try {
+        const fd = await req.formData();
+        const textParts: Record<string, string | string[]> = {};
+        for (const [name, value] of fd.entries()) {
+          if (typeof value === "string") {
+            const existing = textParts[name];
+            if (existing === undefined) {
+              textParts[name] = value;
+            } else if (Array.isArray(existing)) {
+              existing.push(value);
+            } else {
+              textParts[name] = [existing, value];
+            }
           } else {
-            textParts[name] = [existing, value];
+            const buf = new Uint8Array(await value.arrayBuffer());
+            const truncated = buf.byteLength > opts.maxFileBytes;
+            files.push({
+              fieldName: name,
+              fileName: value.name || null,
+              contentType: value.type || null,
+              bytes: truncated ? buf.slice(0, opts.maxFileBytes) : buf,
+            });
           }
-        } else {
-          const buf = new Uint8Array(await value.arrayBuffer());
-          const truncated = buf.byteLength > opts.maxFileBytes;
-          files.push({
-            fieldName: name,
-            fileName: value.name || null,
-            contentType: value.type || null,
-            bytes: truncated ? buf.slice(0, opts.maxFileBytes) : buf,
-          });
         }
+        const serialized = JSON.stringify(textParts);
+        bodySize = Buffer.byteLength(serialized);
+        body = serialized.length > 0 ? serialized : null;
+        multipartParsed = true;
+      } catch {
+        // Malformed multipart (missing boundary, empty body, etc.) — fall through to raw read.
       }
-      const serialized = JSON.stringify(textParts);
-      bodySize = Buffer.byteLength(serialized);
-      body = serialized.length > 0 ? serialized : null;
-    } else {
+    }
+
+    if (!multipartParsed) {
       const buf = Buffer.from(await req.arrayBuffer());
       bodySize = buf.byteLength;
       const slice = bodySize > opts.maxBodyBytes ? buf.subarray(0, opts.maxBodyBytes) : buf;
