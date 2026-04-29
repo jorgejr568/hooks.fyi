@@ -3,14 +3,21 @@ import { parseRequest } from "@/lib/ingest/parse-request";
 import { PayloadTooLargeError } from "@/lib/ingest/types";
 import { buildRequest } from "../helpers/build-request";
 
-const opts = { maxBodyPreviewBytes: 1024, maxRequestBytes: 1_000_000, maxFileBytes: 4096 };
+const opts = {
+  maxBodyPreviewBytes: 1024,
+  maxRequestBytes: 1_000_000,
+  maxFileBytes: 4096,
+};
 
 describe("parseRequest", () => {
   it("parses a GET with query string and headers", async () => {
     const req = buildRequest({
       method: "GET",
       url: "http://localhost:3000/h/abc?x=1&y=2&y=3",
-      headers: { "User-Agent": "curl/8", "X-Forwarded-For": "10.0.0.1, 1.2.3.4" },
+      headers: {
+        "User-Agent": "curl/8",
+        "X-Forwarded-For": "10.0.0.1, 1.2.3.4",
+      },
     });
     const parsed = await parseRequest(req, "/extra/path", opts);
     expect(parsed.method).toBe("GET");
@@ -44,8 +51,16 @@ describe("parseRequest", () => {
     const fd = new FormData();
     fd.append("subject", "hi");
     fd.append("subject", "again");
-    fd.append("file", new File([new Uint8Array([1, 2, 3, 4])], "blob.bin", { type: "application/octet-stream" }));
-    const req = new Request("http://localhost:3000/h/abc", { method: "POST", body: fd });
+    fd.append(
+      "file",
+      new File([new Uint8Array([1, 2, 3, 4])], "blob.bin", {
+        type: "application/octet-stream",
+      }),
+    );
+    const req = new Request("http://localhost:3000/h/abc", {
+      method: "POST",
+      body: fd,
+    });
     const parsed = await parseRequest(req, "/", opts);
     expect(parsed.contentType).toMatch(/^multipart\/form-data/);
     expect(JSON.parse(parsed.body!)).toEqual({ subject: ["hi", "again"] });
@@ -65,7 +80,11 @@ describe("parseRequest", () => {
       headers: { "content-type": "text/plain" },
       body: big,
     });
-    const parsed = await parseRequest(req, "/", { maxBodyPreviewBytes: 100, maxRequestBytes: 1_000_000, maxFileBytes: 4096 });
+    const parsed = await parseRequest(req, "/", {
+      maxBodyPreviewBytes: 100,
+      maxRequestBytes: 1_000_000,
+      maxFileBytes: 4096,
+    });
     expect(parsed.bodySize).toBe(2000);
     expect(parsed.bodyTruncated).toBe(true);
     expect(parsed.body!.length).toBe(100);
@@ -96,7 +115,11 @@ describe("parseRequest", () => {
       body: big,
     });
     await expect(
-      parseRequest(req, "/", { maxBodyPreviewBytes: 100, maxRequestBytes: 1024, maxFileBytes: 4096 }),
+      parseRequest(req, "/", {
+        maxBodyPreviewBytes: 100,
+        maxRequestBytes: 1024,
+        maxFileBytes: 4096,
+      }),
     ).rejects.toBeInstanceOf(PayloadTooLargeError);
   });
 

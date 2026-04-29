@@ -57,7 +57,10 @@ export async function getObjectStream(key: string) {
   };
 }
 
-export async function getDownloadUrl(key: string, expiresInSeconds = 300): Promise<string> {
+export async function getDownloadUrl(
+  key: string,
+  expiresInSeconds = 300,
+): Promise<string> {
   return getSignedUrl(
     s3,
     new GetObjectCommand({ Bucket: env.S3_BUCKET, Key: key }),

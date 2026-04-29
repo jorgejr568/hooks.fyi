@@ -64,11 +64,15 @@ export function RequestRow({ request, selected, onClick }: Props) {
         </div>
         <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
           <span className="tabular-nums">{relTime(request.createdAt)}</span>
-          <span aria-hidden className="text-muted-foreground/40">·</span>
+          <span aria-hidden className="text-muted-foreground/40">
+            ·
+          </span>
           <span className="tabular-nums">{formatBytes(request.bodySize)}</span>
           {request.attachmentCount > 0 && (
             <>
-              <span aria-hidden className="text-muted-foreground/40">·</span>
+              <span aria-hidden className="text-muted-foreground/40">
+                ·
+              </span>
               <span className="inline-flex items-center gap-1 text-foreground/80">
                 <Paperclip className="size-3" />
                 {request.attachmentCount}

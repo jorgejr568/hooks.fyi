@@ -4,9 +4,15 @@ import type { RequestSummary } from "@/types/api";
 
 const PAGE_SIZE = 50;
 
-export async function GET(req: Request, ctx: { params: Promise<{ hookId: string }> }) {
+export async function GET(
+  req: Request,
+  ctx: { params: Promise<{ hookId: string }> },
+) {
   const { hookId } = await ctx.params;
-  const hook = await prisma.hook.findUnique({ where: { id: hookId }, select: { id: true } });
+  const hook = await prisma.hook.findUnique({
+    where: { id: hookId },
+    select: { id: true },
+  });
   if (!hook) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const url = new URL(req.url);

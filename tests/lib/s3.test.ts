@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { putObject, getObjectStream, deletePrefix, buildAttachmentKey } from "@/lib/s3";
+import {
+  putObject,
+  getObjectStream,
+  deletePrefix,
+  buildAttachmentKey,
+} from "@/lib/s3";
 import { randomUUID } from "node:crypto";
 
 describe("s3 wrapper (integration)", () => {

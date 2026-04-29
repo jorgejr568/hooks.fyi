@@ -49,7 +49,8 @@ const jsonTheme = {
   "--w-rjv-key-string-color": "oklch(0.85 0 0)",
 } as React.CSSProperties;
 
-const TEXTUAL_CT = /^(application\/(json|x-www-form-urlencoded|xml|.*\+json|.*\+xml)|text\/.*)/i;
+const TEXTUAL_CT =
+  /^(application\/(json|x-www-form-urlencoded|xml|.*\+json|.*\+xml)|text\/.*)/i;
 
 function extensionFor(ct: string | null): string {
   const main = (ct ?? "").toLowerCase().split(";")[0].trim();
@@ -99,7 +100,8 @@ export function BodyViewer({
   const isVideo = lowerMain.startsWith("video/");
   const isBinaryPreviewable = isImage || isPdf || isAudio || isVideo;
   // The persister stores body as base64 for non-textual content.
-  const bodyIsBase64 = !isMultipart && !!contentType && !TEXTUAL_CT.test(contentType);
+  const bodyIsBase64 =
+    !isMultipart && !!contentType && !TEXTUAL_CT.test(contentType);
 
   const formatted = useMemo(() => {
     if (body == null) return null;
@@ -132,7 +134,8 @@ export function BodyViewer({
   }, [body, bodyIsBase64, formatted, isFormUrlEncoded]);
 
   const dataUri = useMemo(() => {
-    if (!body || !bodyIsBase64 || !isBinaryPreviewable || bodyTruncated) return null;
+    if (!body || !bodyIsBase64 || !isBinaryPreviewable || bodyTruncated)
+      return null;
     return `data:${lowerMain};base64,${body}`;
   }, [body, bodyIsBase64, isBinaryPreviewable, bodyTruncated, lowerMain]);
 
@@ -154,7 +157,9 @@ export function BodyViewer({
     const bytes = bodyIsBase64
       ? Uint8Array.from(atob(body), (c) => c.charCodeAt(0))
       : new TextEncoder().encode(body);
-    const blob = new Blob([bytes], { type: lowerMain || "application/octet-stream" });
+    const blob = new Blob([bytes], {
+      type: lowerMain || "application/octet-stream",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -170,7 +175,8 @@ export function BodyViewer({
       {bodyTruncated && fullBodyUrl && (
         <div className="flex items-center justify-between gap-2 border-b border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
           <span>
-            Showing first {body ? formatBytes(Buffer.byteLength(body, "utf8")) : "0 B"}
+            Showing first{" "}
+            {body ? formatBytes(Buffer.byteLength(body, "utf8")) : "0 B"}
             {fullBodySize ? ` of ${formatBytes(fullBodySize)} total` : ""}.
           </span>
           <a
@@ -230,12 +236,28 @@ export function BodyViewer({
             </div>
           )}
           {bodyIsBase64 && (
-            <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onDownload} title="Download body">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2"
+              onClick={onDownload}
+              title="Download body"
+            >
               <Download className="size-3" />
             </Button>
           )}
-          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onCopy} title="Copy">
-            {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2"
+            onClick={onCopy}
+            title="Copy"
+          >
+            {copied ? (
+              <Check className="size-3" />
+            ) : (
+              <Copy className="size-3" />
+            )}
           </Button>
         </div>
       </div>
@@ -290,7 +312,8 @@ export function BodyViewer({
         <>
           {isBinaryPreviewable && bodyTruncated && mode === "decoded" && (
             <div className="border-b border-border/40 bg-amber-500/5 px-3 py-2 text-xs text-amber-300/90">
-              Body too large to preview. Showing the truncated base64 payload below.
+              Body too large to preview. Showing the truncated base64 payload
+              below.
             </div>
           )}
           <pre className="max-h-[60svh] overflow-auto px-3 py-2 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all">

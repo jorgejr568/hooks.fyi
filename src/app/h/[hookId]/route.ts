@@ -1,6 +1,9 @@
 import { handleIngest } from "./_handle";
 
-async function handle(req: Request, ctx: { params: Promise<{ hookId: string }> }) {
+async function handle(
+  req: Request,
+  ctx: { params: Promise<{ hookId: string }> },
+) {
   const { hookId } = await ctx.params;
   return handleIngest(req, hookId, []);
 }

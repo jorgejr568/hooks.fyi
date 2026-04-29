@@ -1,4 +1,10 @@
-export type MethodTone = "sky" | "emerald" | "amber" | "violet" | "rose" | "zinc";
+export type MethodTone =
+  | "sky"
+  | "emerald"
+  | "amber"
+  | "violet"
+  | "rose"
+  | "zinc";
 
 const map: Record<string, MethodTone> = {
   GET: "sky",

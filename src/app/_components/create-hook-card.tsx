@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import type { CreateHookResponse } from "@/types/api";
@@ -41,12 +48,15 @@ export function CreateHookCard() {
           Spin up a new hook
         </CardTitle>
         <CardDescription>
-          You&rsquo;ll get a unique URL. Send any HTTP request to it and inspect every byte right here.
+          You&rsquo;ll get a unique URL. Send any HTTP request to it and inspect
+          every byte right here.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Name <span className="text-muted-foreground">(optional)</span></Label>
+          <Label htmlFor="name">
+            Name <span className="text-muted-foreground">(optional)</span>
+          </Label>
           <Input
             id="name"
             placeholder="e.g. Stripe sandbox webhook"
@@ -58,7 +68,12 @@ export function CreateHookCard() {
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" size="lg" onClick={onCreate} disabled={pending}>
+        <Button
+          className="w-full"
+          size="lg"
+          onClick={onCreate}
+          disabled={pending}
+        >
           {pending ? (
             <>
               <Loader2 className="size-4 animate-spin" /> Creating&hellip;

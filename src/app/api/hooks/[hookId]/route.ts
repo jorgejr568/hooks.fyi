@@ -8,7 +8,10 @@ const patchSchema = z.object({
   name: z.string().trim().max(120).nullable(),
 });
 
-export async function GET(_req: Request, ctx: { params: Promise<{ hookId: string }> }) {
+export async function GET(
+  _req: Request,
+  ctx: { params: Promise<{ hookId: string }> },
+) {
   const { hookId } = await ctx.params;
   const hook = await prisma.hook.findUnique({
     where: { id: hookId },
@@ -23,7 +26,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ hookId: string
   return NextResponse.json(out);
 }
 
-export async function PATCH(req: Request, ctx: { params: Promise<{ hookId: string }> }) {
+export async function PATCH(
+  req: Request,
+  ctx: { params: Promise<{ hookId: string }> },
+) {
   const { hookId } = await ctx.params;
   let payload: z.infer<typeof patchSchema>;
   try {
@@ -38,7 +44,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ hookId: strin
       select: { id: true, name: true, createdAt: true },
     })
     .catch(() => null);
-  if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
+  if (!updated)
+    return NextResponse.json({ error: "not found" }, { status: 404 });
   const out: HookSummary = {
     id: updated.id,
     name: updated.name,
@@ -47,9 +54,15 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ hookId: strin
   return NextResponse.json(out);
 }
 
-export async function DELETE(_req: Request, ctx: { params: Promise<{ hookId: string }> }) {
+export async function DELETE(
+  _req: Request,
+  ctx: { params: Promise<{ hookId: string }> },
+) {
   const { hookId } = await ctx.params;
-  const hook = await prisma.hook.findUnique({ where: { id: hookId }, select: { id: true } });
+  const hook = await prisma.hook.findUnique({
+    where: { id: hookId },
+    select: { id: true },
+  });
   if (!hook) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   await deletePrefix(`hooks/${hookId}/`);

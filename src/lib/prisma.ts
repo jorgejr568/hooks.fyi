@@ -16,7 +16,10 @@ function buildClient(): PrismaClient {
     { emit: "event", level: "error" },
     { emit: "event", level: "info" },
   ];
-  if ((process.env.LOG_LEVEL ?? "info") === "debug" || process.env.LOG_LEVEL === "trace") {
+  if (
+    (process.env.LOG_LEVEL ?? "info") === "debug" ||
+    process.env.LOG_LEVEL === "trace"
+  ) {
     log.push({ emit: "event", level: "query" });
   }
 
@@ -49,6 +52,8 @@ export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop) {
     const client = getClient() as unknown as Record<string | symbol, unknown>;
     const value = client[prop];
-    return typeof value === "function" ? (value as (...a: unknown[]) => unknown).bind(client) : value;
+    return typeof value === "function"
+      ? (value as (...a: unknown[]) => unknown).bind(client)
+      : value;
   },
 }) as PrismaClient;

@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect, KeyboardEvent } from "react";
+import {
+  useState,
+  useTransition,
+  useRef,
+  useEffect,
+  KeyboardEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -23,7 +29,12 @@ interface Props {
   ingestUrl: string;
 }
 
-export function HookHeader({ hookId, name: initialName, createdAt, ingestUrl }: Props) {
+export function HookHeader({
+  hookId,
+  name: initialName,
+  createdAt,
+  ingestUrl,
+}: Props) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [deletePending, startDelete] = useTransition();
@@ -110,7 +121,12 @@ export function HookHeader({ hookId, name: initialName, createdAt, ingestUrl }: 
             <ArrowLeft className="size-3.5" />
             <span className="hidden sm:inline">hooks.fyi</span>
           </Link>
-          <span aria-hidden className="hidden text-muted-foreground/40 sm:inline">/</span>
+          <span
+            aria-hidden
+            className="hidden text-muted-foreground/40 sm:inline"
+          >
+            /
+          </span>
           <div className="flex min-w-0 flex-1 items-center gap-1.5">
             {editing ? (
               <input
@@ -130,7 +146,9 @@ export function HookHeader({ hookId, name: initialName, createdAt, ingestUrl }: 
                 className="group inline-flex min-w-0 cursor-text items-center gap-1.5"
               >
                 <span className="truncate text-sm font-semibold tracking-tight">
-                  {name ?? <span className="text-muted-foreground">Untitled hook</span>}
+                  {name ?? (
+                    <span className="text-muted-foreground">Untitled hook</span>
+                  )}
                 </span>
                 <Pencil className="size-3 shrink-0 text-muted-foreground/0 transition group-hover:text-muted-foreground/60" />
               </h1>
@@ -157,12 +175,16 @@ export function HookHeader({ hookId, name: initialName, createdAt, ingestUrl }: 
               <DialogHeader>
                 <DialogTitle>Delete this hook?</DialogTitle>
                 <DialogDescription>
-                  This permanently removes the hook, all captured requests, and any uploaded files.
-                  This cannot be undone.
+                  This permanently removes the hook, all captured requests, and
+                  any uploaded files. This cannot be undone.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
-                <Button variant="destructive" onClick={onDelete} disabled={deletePending}>
+                <Button
+                  variant="destructive"
+                  onClick={onDelete}
+                  disabled={deletePending}
+                >
                   {deletePending ? "Deleting…" : "Delete forever"}
                 </Button>
               </DialogFooter>
@@ -174,8 +196,17 @@ export function HookHeader({ hookId, name: initialName, createdAt, ingestUrl }: 
           <code className="flex-1 truncate rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5 font-mono text-xs">
             {ingestUrl}
           </code>
-          <Button size="sm" variant="secondary" onClick={onCopy} className="shrink-0">
-            {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={onCopy}
+            className="shrink-0"
+          >
+            {copied ? (
+              <Check className="size-3.5" />
+            ) : (
+              <Copy className="size-3.5" />
+            )}
             <span className="sr-only">Copy URL</span>
           </Button>
         </div>

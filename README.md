@@ -77,7 +77,7 @@ docker run --rm -p 3000:3000 \
 
 Run migrations against your managed Postgres before the first boot. Either locally with `pnpm db:deploy` (needs `DATABASE_URL` set), or by building and running the dedicated migrator image:
 
-```bash
+````bash
 docker build -f Dockerfile.migrate -t hooksfyi-migrate:latest .
 docker run --rm -e DATABASE_URL="postgresql://..." hooksfyi-migrate:latest
 ``` The image uses Next.js [standalone output](https://nextjs.org/docs/app/api-reference/config/next-config-js/output) so it ships only the runtime files it actually needs (`server.js` + the minimal `node_modules` slice, plus `.next/static` and `public/`). Final image is roughly 200 MB.
@@ -100,3 +100,4 @@ The app is single-process, so SSE pub/sub uses an in-memory `EventEmitter`. To r
 ## License
 
 MIT — see [LICENSE](./LICENSE).
+````

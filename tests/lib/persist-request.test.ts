@@ -66,7 +66,10 @@ describe("persistRequest", () => {
     const parsed: ParsedRequest = {
       ...baseParsed,
       contentType: "multipart/form-data; boundary=x",
-      headers: { ...baseParsed.headers, "content-type": "multipart/form-data; boundary=x" },
+      headers: {
+        ...baseParsed.headers,
+        "content-type": "multipart/form-data; boundary=x",
+      },
       body: '{"subject":"hi"}',
       bodySize: 16,
       files: [
@@ -88,7 +91,9 @@ describe("persistRequest", () => {
     expect(Number(attachments[0].size)).toBe(13);
 
     const obj = await getObjectStream(attachments[0].s3Key);
-    expect((await readStream(obj.body!)).toString("utf8")).toBe("file contents");
+    expect((await readStream(obj.body!)).toString("utf8")).toBe(
+      "file contents",
+    );
   });
 
   it("uploads overflow body to s3 as a RAW_BODY attachment", async () => {
@@ -149,7 +154,10 @@ describe("persistRequest", () => {
     const attachments = await prisma.attachment.findMany({
       where: { requestId: result.id },
     });
-    expect(attachments.map((a) => a.kind).sort()).toEqual(["MULTIPART_FILE", "RAW_BODY"]);
+    expect(attachments.map((a) => a.kind).sort()).toEqual([
+      "MULTIPART_FILE",
+      "RAW_BODY",
+    ]);
   });
 
   it("returns request id usable for downstream events", async () => {

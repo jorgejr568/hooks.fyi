@@ -24,13 +24,21 @@ function formatBytes(n: number): string {
   return `${(n / 1024 / 1024).toFixed(2)} MB`;
 }
 
-function categorize(ct: string | null): "image" | "pdf" | "audio" | "video" | "text" | "other" {
+function categorize(
+  ct: string | null,
+): "image" | "pdf" | "audio" | "video" | "text" | "other" {
   const main = (ct ?? "").toLowerCase().split(";")[0].trim();
   if (main.startsWith("image/")) return "image";
   if (main === "application/pdf") return "pdf";
   if (main.startsWith("audio/")) return "audio";
   if (main.startsWith("video/")) return "video";
-  if (main.startsWith("text/") || main === "application/json" || main.endsWith("+json") || main.endsWith("+xml")) return "text";
+  if (
+    main.startsWith("text/") ||
+    main === "application/json" ||
+    main.endsWith("+json") ||
+    main.endsWith("+xml")
+  )
+    return "text";
   return "other";
 }
 
@@ -50,7 +58,13 @@ function iconFor(category: ReturnType<typeof categorize>) {
   }
 }
 
-function AttachmentRow({ attachment, hookId }: { attachment: Attachment; hookId: string }) {
+function AttachmentRow({
+  attachment,
+  hookId,
+}: {
+  attachment: Attachment;
+  hookId: string;
+}) {
   const category = categorize(attachment.contentType);
   const previewable = category !== "other";
   const [open, setOpen] = useState(false);
@@ -64,7 +78,9 @@ function AttachmentRow({ attachment, hookId }: { attachment: Attachment; hookId:
       <div className="flex items-center gap-3 px-3 py-2">
         <Icon className="size-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
-          <div className="truncate font-mono text-sm">{attachment.fileName ?? "(unnamed)"}</div>
+          <div className="truncate font-mono text-sm">
+            {attachment.fileName ?? "(unnamed)"}
+          </div>
           <div className="text-xs text-muted-foreground">
             <span className="font-mono">{attachment.fieldName ?? "—"}</span>
             <span aria-hidden> · </span>
@@ -93,7 +109,9 @@ function AttachmentRow({ attachment, hookId }: { attachment: Attachment; hookId:
           variant="secondary"
           nativeButton={false}
           className="shrink-0"
-          render={<a href={baseUrl} download={attachment.fileName ?? undefined} />}
+          render={
+            <a href={baseUrl} download={attachment.fileName ?? undefined} />
+          }
         >
           <Download className="size-4" />
         </Button>
@@ -103,7 +121,9 @@ function AttachmentRow({ attachment, hookId }: { attachment: Attachment; hookId:
         <div
           className={cn(
             "grid transition-all",
-            open ? "grid-rows-[1fr] border-t border-border/40" : "grid-rows-[0fr]",
+            open
+              ? "grid-rows-[1fr] border-t border-border/40"
+              : "grid-rows-[0fr]",
           )}
         >
           <div className="overflow-hidden">
@@ -120,7 +140,11 @@ function AttachmentRow({ attachment, hookId }: { attachment: Attachment; hookId:
                   </div>
                 )}
                 {category === "pdf" && (
-                  <iframe src={url} className="h-[70svh] w-full" title={attachment.fileName ?? "pdf"} />
+                  <iframe
+                    src={url}
+                    className="h-[70svh] w-full"
+                    title={attachment.fileName ?? "pdf"}
+                  />
                 )}
                 {category === "audio" && (
                   <div className="flex items-center justify-center p-4">
@@ -129,7 +153,11 @@ function AttachmentRow({ attachment, hookId }: { attachment: Attachment; hookId:
                 )}
                 {category === "video" && (
                   <div className="flex items-center justify-center bg-black p-2">
-                    <video controls src={url} className="max-h-[70svh] max-w-full" />
+                    <video
+                      controls
+                      src={url}
+                      className="max-h-[70svh] max-w-full"
+                    />
                   </div>
                 )}
                 {category === "text" && (
@@ -166,7 +194,9 @@ function Section({
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {title}
         </span>
-        {hint && <span className="text-[11px] text-muted-foreground/70">{hint}</span>}
+        {hint && (
+          <span className="text-[11px] text-muted-foreground/70">{hint}</span>
+        )}
       </div>
       <ul className="divide-y divide-border/40 overflow-hidden rounded-md border border-border/50">
         {items.map((a) => (
@@ -185,7 +215,11 @@ export function AttachmentsList({
   hookId: string;
 }) {
   if (items.length === 0) {
-    return <p className="px-1 py-4 text-sm text-muted-foreground">No file attachments</p>;
+    return (
+      <p className="px-1 py-4 text-sm text-muted-foreground">
+        No file attachments
+      </p>
+    );
   }
   const multipart = items.filter((a) => a.kind === "MULTIPART_FILE");
   const rawBodies = items.filter((a) => a.kind === "RAW_BODY");

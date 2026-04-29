@@ -28,5 +28,7 @@ class HookEventBus {
 }
 
 const globalForEvents = globalThis as unknown as { hookEvents?: HookEventBus };
-export const hookEvents: HookEventBus = globalForEvents.hookEvents ?? new HookEventBus();
-if (process.env.NODE_ENV !== "production") globalForEvents.hookEvents = hookEvents;
+export const hookEvents: HookEventBus =
+  globalForEvents.hookEvents ?? new HookEventBus();
+if (process.env.NODE_ENV !== "production")
+  globalForEvents.hookEvents = hookEvents;

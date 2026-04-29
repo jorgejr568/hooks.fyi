@@ -22,7 +22,9 @@ const schema = z.object({
   // Per-file cap inside multipart/form-data and for body overflow uploads.
   MAX_FILE_BYTES: z.coerce.number().int().positive().default(52_428_800), // 50 MB
   // Logging
-  LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
+  LOG_LEVEL: z
+    .enum(["fatal", "error", "warn", "info", "debug", "trace"])
+    .default("info"),
   LOG_JSON: z.enum(["true", "false"]).optional(),
 });
 
@@ -34,7 +36,8 @@ export type Env = z.infer<typeof schema>;
 // handlers can be statically analyzed without real secrets.
 const BUILD_PHASE = "phase-production-build";
 const buildPlaceholder: Env = {
-  DATABASE_URL: "postgresql://placeholder:placeholder@localhost:5432/placeholder",
+  DATABASE_URL:
+    "postgresql://placeholder:placeholder@localhost:5432/placeholder",
   S3_ENDPOINT: "http://localhost:9000",
   S3_REGION: "us-east-1",
   S3_BUCKET: "placeholder",

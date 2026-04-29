@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getObjectStream } from "@/lib/s3";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(
   req: Request,
@@ -31,7 +32,8 @@ export async function GET(
   if (!att) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const obj = await getObjectStream(att.s3Key);
-  if (!obj.body) return NextResponse.json({ error: "missing object" }, { status: 502 });
+  if (!obj.body)
+    return NextResponse.json({ error: "missing object" }, { status: 502 });
 
   const url = new URL(req.url);
   const inline = url.searchParams.get("inline") === "1";

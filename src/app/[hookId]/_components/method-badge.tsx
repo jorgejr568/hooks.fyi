@@ -10,7 +10,13 @@ const tones: Record<string, string> = {
   zinc: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
 };
 
-export function MethodBadge({ method, className }: { method: string; className?: string }) {
+export function MethodBadge({
+  method,
+  className,
+}: {
+  method: string;
+  className?: string;
+}) {
   const tone = tones[methodColor(method)];
   return (
     <span

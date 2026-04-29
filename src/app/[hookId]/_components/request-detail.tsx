@@ -43,7 +43,8 @@ export function RequestDetail({ hookId, requestId }: Props) {
     return (
       <section className="flex items-center justify-center bg-background p-10 text-center">
         <p className="max-w-sm text-sm text-muted-foreground">
-          Select a request from the left, or send one to your hook URL to see it appear here.
+          Select a request from the left, or send one to your hook URL to see it
+          appear here.
         </p>
       </section>
     );
@@ -63,15 +64,23 @@ export function RequestDetail({ hookId, requestId }: Props) {
   const fullBodyUrl = rawBody
     ? `/api/files/${hookId}/${rawBody.id}.${fileExtension(rawBody.fileName, rawBody.contentType)}?inline=1`
     : null;
-  const fullBodySize = rawBody ? rawBody.size : detail.bodyTruncated ? detail.bodySize : null;
-  const multipartCount = detail.attachments.filter((a) => a.kind === "MULTIPART_FILE").length;
+  const fullBodySize = rawBody
+    ? rawBody.size
+    : detail.bodyTruncated
+      ? detail.bodySize
+      : null;
+  const multipartCount = detail.attachments.filter(
+    (a) => a.kind === "MULTIPART_FILE",
+  ).length;
 
   return (
     <section className="flex min-w-0 flex-col bg-background">
       <div className="border-b border-border/50 px-6 py-4">
         <div className="flex items-center gap-3">
           <MethodBadge method={detail.method} className="text-xs" />
-          <code className="truncate font-mono text-sm">{detail.path || "/"}</code>
+          <code className="truncate font-mono text-sm">
+            {detail.path || "/"}
+          </code>
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span>{new Date(detail.createdAt).toLocaleString()}</span>
@@ -90,13 +99,23 @@ export function RequestDetail({ hookId, requestId }: Props) {
             Body{detail.body ? "" : " (empty)"}
           </TabsTrigger>
           <TabsTrigger value="headers">
-            Headers <span className="ml-1 text-muted-foreground">({Object.keys(detail.headers).length})</span>
+            Headers{" "}
+            <span className="ml-1 text-muted-foreground">
+              ({Object.keys(detail.headers).length})
+            </span>
           </TabsTrigger>
           <TabsTrigger value="query">
-            Query <span className="ml-1 text-muted-foreground">({Object.keys(detail.query).length})</span>
+            Query{" "}
+            <span className="ml-1 text-muted-foreground">
+              ({Object.keys(detail.query).length})
+            </span>
           </TabsTrigger>
           <TabsTrigger value="files">
-            Files <span className="ml-1 text-muted-foreground">({multipartCount}{rawBody ? "+1" : ""})</span>
+            Files{" "}
+            <span className="ml-1 text-muted-foreground">
+              ({multipartCount}
+              {rawBody ? "+1" : ""})
+            </span>
           </TabsTrigger>
         </TabsList>
         <div className="flex-1 overflow-auto px-6 py-4">

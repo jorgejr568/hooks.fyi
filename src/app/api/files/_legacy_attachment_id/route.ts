@@ -19,7 +19,8 @@ export async function GET(
   if (!att) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const obj = await getObjectStream(att.s3Key);
-  if (!obj.body) return NextResponse.json({ error: "missing object" }, { status: 502 });
+  if (!obj.body)
+    return NextResponse.json({ error: "missing object" }, { status: 502 });
 
   const url = new URL(req.url);
   const inline = url.searchParams.get("inline") === "1";

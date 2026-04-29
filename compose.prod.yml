@@ -20,7 +20,11 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hooks} -d ${POSTGRES_DB:-hooksfyi}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-hooks} -d ${POSTGRES_DB:-hooksfyi}",
+        ]
       interval: 5s
       timeout: 3s
       retries: 20

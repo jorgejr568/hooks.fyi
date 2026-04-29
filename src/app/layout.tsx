@@ -21,14 +21,22 @@ export const metadata: Metadata = {
       { url: "/favicon-96x96.png", type: "image/png", sizes: "96x96" },
     ],
     shortcut: "/favicon.ico",
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans min-h-svh`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} font-sans min-h-svh`}
+      >
         {children}
         <Toaster theme="dark" position="bottom-right" richColors />
       </body>

@@ -3,9 +3,15 @@ import { hookEvents, type HookEvent } from "@/lib/events/hook-events";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, ctx: { params: Promise<{ hookId: string }> }) {
+export async function GET(
+  req: Request,
+  ctx: { params: Promise<{ hookId: string }> },
+) {
   const { hookId } = await ctx.params;
-  const hook = await prisma.hook.findUnique({ where: { id: hookId }, select: { id: true } });
+  const hook = await prisma.hook.findUnique({
+    where: { id: hookId },
+    select: { id: true },
+  });
   if (!hook) return new Response("not found", { status: 404 });
 
   const encoder = new TextEncoder();

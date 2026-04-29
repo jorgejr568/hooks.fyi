@@ -37,7 +37,9 @@ export function RequestList({ hookId, selectedId, onSelect }: Props) {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
     try {
-      const res = await fetch(`/api/hooks/${hookId}/requests?cursor=${nextCursor}`);
+      const res = await fetch(
+        `/api/hooks/${hookId}/requests?cursor=${nextCursor}`,
+      );
       const data = (await res.json()) as ListResponse;
       setItems((prev) => [...(prev ?? []), ...data.items]);
       setNextCursor(data.nextCursor);
@@ -46,16 +48,21 @@ export function RequestList({ hookId, selectedId, onSelect }: Props) {
     }
   }, [hookId, nextCursor, loadingMore]);
 
-  const fetchAndPrepend = useCallback(async (sinceIso: string) => {
-    const res = await fetch(`/api/hooks/${hookId}/requests?since=${encodeURIComponent(sinceIso)}`);
-    const data = (await res.json()) as ListResponse;
-    if (data.items.length === 0) return;
-    setItems((prev) => {
-      const existing = new Set((prev ?? []).map((r) => r.id));
-      const fresh = data.items.filter((r) => !existing.has(r.id));
-      return [...fresh, ...(prev ?? [])];
-    });
-  }, [hookId]);
+  const fetchAndPrepend = useCallback(
+    async (sinceIso: string) => {
+      const res = await fetch(
+        `/api/hooks/${hookId}/requests?since=${encodeURIComponent(sinceIso)}`,
+      );
+      const data = (await res.json()) as ListResponse;
+      if (data.items.length === 0) return;
+      setItems((prev) => {
+        const existing = new Set((prev ?? []).map((r) => r.id));
+        const fresh = data.items.filter((r) => !existing.has(r.id));
+        return [...fresh, ...(prev ?? [])];
+      });
+    },
+    [hookId],
+  );
 
   useEffect(() => {
     loadInitial();
@@ -84,7 +91,9 @@ export function RequestList({ hookId, selectedId, onSelect }: Props) {
       <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Requests</span>
-          <span className="text-xs text-muted-foreground">{items?.length ?? 0}</span>
+          <span className="text-xs text-muted-foreground">
+            {items?.length ?? 0}
+          </span>
         </div>
         <span
           className={
@@ -97,7 +106,9 @@ export function RequestList({ hookId, selectedId, onSelect }: Props) {
           <span
             className={
               "size-1.5 rounded-full " +
-              (live ? "bg-emerald-400 shadow-[0_0_8px] shadow-emerald-400/70" : "bg-zinc-400")
+              (live
+                ? "bg-emerald-400 shadow-[0_0_8px] shadow-emerald-400/70"
+                : "bg-zinc-400")
             }
           />
           {live ? "live" : "offline"}
@@ -135,8 +146,18 @@ export function RequestList({ hookId, selectedId, onSelect }: Props) {
 
         {nextCursor && (
           <div className="p-4">
-            <Button variant="ghost" size="sm" className="w-full" onClick={loadMore} disabled={loadingMore}>
-              {loadingMore ? <Loader2 className="size-4 animate-spin" /> : "Load older"}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full"
+              onClick={loadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                "Load older"
+              )}
             </Button>
           </div>
         )}

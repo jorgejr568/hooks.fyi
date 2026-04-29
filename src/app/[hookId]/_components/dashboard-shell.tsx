@@ -18,7 +18,11 @@ export function DashboardShell({ hookId }: { hookId: string }) {
           selectedId && "hidden lg:flex",
         )}
       >
-        <RequestList hookId={hookId} selectedId={selectedId} onSelect={setSelectedId} />
+        <RequestList
+          hookId={hookId}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+        />
       </aside>
 
       <section
@@ -29,7 +33,11 @@ export function DashboardShell({ hookId }: { hookId: string }) {
       >
         {selectedId && (
           <div className="flex items-center gap-2 border-b border-border/50 px-3 py-2 lg:hidden">
-            <Button size="sm" variant="ghost" onClick={() => setSelectedId(null)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedId(null)}
+            >
               <ArrowLeft className="size-4" />
               <span className="ml-1">Back</span>
             </Button>

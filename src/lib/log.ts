@@ -35,6 +35,8 @@ function build(): pino.Logger {
   return pino(opts);
 }
 
-const globalForLog = globalThis as unknown as { logger: pino.Logger | undefined };
+const globalForLog = globalThis as unknown as {
+  logger: pino.Logger | undefined;
+};
 export const logger: pino.Logger = globalForLog.logger ?? build();
 if (process.env.NODE_ENV !== "production") globalForLog.logger = logger;

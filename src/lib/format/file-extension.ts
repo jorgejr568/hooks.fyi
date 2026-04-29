@@ -24,11 +24,17 @@ const CT_EXTENSION: Record<string, string> = {
   "video/webm": "webm",
 };
 
-export function fileExtension(fileName: string | null | undefined, contentType: string | null | undefined): string {
+export function fileExtension(
+  fileName: string | null | undefined,
+  contentType: string | null | undefined,
+): string {
   if (fileName) {
     const dot = fileName.lastIndexOf(".");
     if (dot > 0 && dot < fileName.length - 1) {
-      const ext = fileName.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, "");
+      const ext = fileName
+        .slice(dot + 1)
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
       if (ext.length > 0 && ext.length <= 8) return ext;
     }
   }
