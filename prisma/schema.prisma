@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Hook {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String?  @db.VarChar(120)
+  createdAt DateTime @default(now())
+
+  requests  Request[]
+
+  @@index([createdAt])
+}
+
+model Request {
+  id           String   @id @default(uuid()) @db.Uuid
+  hookId       String   @db.Uuid
+  method       String   @db.VarChar(16)
+  path         String   @db.VarChar(2048)
+  query        Json     @default("{}")
+  headers      Json     @default("{}")
+  contentType  String?  @db.VarChar(255)
+  body         String?  @db.Text
+  bodyTruncated Boolean @default(false)
+  bodySize     Int      @default(0)
+  ip           String?  @db.VarChar(64)
+  userAgent    String?  @db.VarChar(512)
+  createdAt    DateTime @default(now())
+
+  hook         Hook         @relation(fields: [hookId], references: [id], onDelete: Cascade)
+  attachments  Attachment[]
+
+  @@index([hookId, createdAt(sort: Desc)])
+}
+
+model Attachment {
+  id          String   @id @default(uuid()) @db.Uuid
+  requestId   String   @db.Uuid
+  fieldName   String?  @db.VarChar(255)
+  fileName    String?  @db.VarChar(512)
+  contentType String?  @db.VarChar(255)
+  size        BigInt
+  s3Key       String   @unique @db.VarChar(1024)
+  createdAt   DateTime @default(now())
+
+  request     Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+}

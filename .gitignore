@@ -53,3 +53,5 @@ docker/postgres/data/
 
 # Prisma
 prisma/*.db
+
+/src/generated/prisma
