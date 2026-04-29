@@ -31,8 +31,7 @@ export function RequestList({ hookId, selectedId, onSelect }: Props) {
     const data = (await res.json()) as ListResponse;
     setItems(data.items);
     setNextCursor(data.nextCursor);
-    if (data.items.length > 0 && !selectedId) onSelect(data.items[0].id);
-  }, [hookId, selectedId, onSelect]);
+  }, [hookId]);
 
   const loadMore = useCallback(async () => {
     if (!nextCursor || loadingMore) return;
@@ -105,7 +104,7 @@ export function RequestList({ hookId, selectedId, onSelect }: Props) {
         </span>
       </div>
 
-      <ScrollArea className="h-[calc(100svh-180px)]">
+      <ScrollArea className="flex-1">
         {items === null ? (
           <div className="space-y-3 p-4">
             {Array.from({ length: 5 }).map((_, i) => (

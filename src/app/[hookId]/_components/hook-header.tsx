@@ -100,49 +100,45 @@ export function HookHeader({ hookId, name: initialName, createdAt, ingestUrl }: 
   };
 
   return (
-    <header className="border-b border-border/50 bg-background/60 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
+    <header className="border-b border-border/50 bg-background/80 backdrop-blur">
+      <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-2.5 sm:px-6">
+        <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="size-3" /> hooks.fyi
+            <ArrowLeft className="size-3.5" />
+            <span className="hidden sm:inline">hooks.fyi</span>
           </Link>
-          {editing ? (
-            <input
-              ref={inputRef}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onBlur={commit}
-              onKeyDown={onKeyDown}
-              maxLength={120}
-              placeholder="Untitled hook"
-              className="w-full max-w-md rounded-md border border-border/60 bg-muted/30 px-2 py-1 text-lg font-semibold tracking-tight outline-none focus:border-primary"
-            />
-          ) : (
-            <h1
-              onDoubleClick={startEdit}
-              title="Double-click to rename"
-              className="group inline-flex cursor-text items-center gap-1.5 truncate text-lg font-semibold tracking-tight"
-            >
-              {name ?? <span className="text-muted-foreground">Untitled hook</span>}
-              <Pencil className="size-3 text-muted-foreground/0 transition group-hover:text-muted-foreground/70" />
-            </h1>
-          )}
-          <p className="text-xs text-muted-foreground">
-            created {new Date(createdAt).toLocaleString()}
-          </p>
-        </div>
-
-        <div className="flex flex-1 items-center gap-2 sm:max-w-xl">
-          <code className="flex-1 truncate rounded-md border border-border/60 bg-muted/40 px-3 py-2 font-mono text-sm">
-            {ingestUrl}
-          </code>
-          <Button size="sm" variant="secondary" onClick={onCopy}>
-            {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-            <span className="sr-only">Copy</span>
-          </Button>
+          <span aria-hidden className="hidden text-muted-foreground/40 sm:inline">/</span>
+          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+            {editing ? (
+              <input
+                ref={inputRef}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commit}
+                onKeyDown={onKeyDown}
+                maxLength={120}
+                placeholder="Untitled hook"
+                className="w-full max-w-xs rounded-md border border-border/60 bg-muted/30 px-2 py-0.5 text-sm font-semibold tracking-tight outline-none focus:border-primary"
+              />
+            ) : (
+              <h1
+                onDoubleClick={startEdit}
+                title="Double-click to rename"
+                className="group inline-flex min-w-0 cursor-text items-center gap-1.5"
+              >
+                <span className="truncate text-sm font-semibold tracking-tight">
+                  {name ?? <span className="text-muted-foreground">Untitled hook</span>}
+                </span>
+                <Pencil className="size-3 shrink-0 text-muted-foreground/0 transition group-hover:text-muted-foreground/60" />
+              </h1>
+            )}
+            <span className="hidden whitespace-nowrap text-[11px] text-muted-foreground/70 md:inline">
+              · {new Date(createdAt).toLocaleString()}
+            </span>
+          </div>
 
           <Dialog>
             <DialogTrigger
@@ -150,7 +146,7 @@ export function HookHeader({ hookId, name: initialName, createdAt, ingestUrl }: 
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-destructive hover:text-destructive"
+                  className="shrink-0 text-muted-foreground hover:text-destructive"
                 />
               }
             >
@@ -172,6 +168,16 @@ export function HookHeader({ hookId, name: initialName, createdAt, ingestUrl }: 
               </DialogFooter>
             </DialogContent>
           </Dialog>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <code className="flex-1 truncate rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5 font-mono text-xs">
+            {ingestUrl}
+          </code>
+          <Button size="sm" variant="secondary" onClick={onCopy} className="shrink-0">
+            {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+            <span className="sr-only">Copy URL</span>
+          </Button>
         </div>
       </div>
     </header>
