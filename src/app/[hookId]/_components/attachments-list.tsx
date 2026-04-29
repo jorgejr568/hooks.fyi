@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { fileExtension } from "@/lib/format/file-extension";
 import type { RequestDetail } from "@/types/api";
 
 type Attachment = RequestDetail["attachments"][number];
@@ -49,12 +50,14 @@ function iconFor(category: ReturnType<typeof categorize>) {
   }
 }
 
-function AttachmentRow({ attachment }: { attachment: Attachment }) {
+function AttachmentRow({ attachment, hookId }: { attachment: Attachment; hookId: string }) {
   const category = categorize(attachment.contentType);
   const previewable = category !== "other";
   const [open, setOpen] = useState(false);
   const Icon = iconFor(category);
-  const url = `/api/files/${attachment.id}?inline=1`;
+  const ext = fileExtension(attachment.fileName, attachment.contentType);
+  const baseUrl = `/api/files/${hookId}/${attachment.id}.${ext}`;
+  const url = `${baseUrl}?inline=1`;
 
   return (
     <li>
@@ -89,7 +92,7 @@ function AttachmentRow({ attachment }: { attachment: Attachment }) {
           size="sm"
           variant="secondary"
           className="shrink-0"
-          render={<a href={`/api/files/${attachment.id}`} download={attachment.fileName ?? undefined} />}
+          render={<a href={baseUrl} download={attachment.fileName ?? undefined} />}
         >
           <Download className="size-4" />
         </Button>
@@ -144,14 +147,20 @@ function AttachmentRow({ attachment }: { attachment: Attachment }) {
   );
 }
 
-export function AttachmentsList({ items }: { items: RequestDetail["attachments"] }) {
+export function AttachmentsList({
+  items,
+  hookId,
+}: {
+  items: RequestDetail["attachments"];
+  hookId: string;
+}) {
   if (items.length === 0) {
     return <p className="px-1 py-4 text-sm text-muted-foreground">No file attachments</p>;
   }
   return (
     <ul className="divide-y divide-border/40 overflow-hidden rounded-md border border-border/50">
       {items.map((a) => (
-        <AttachmentRow key={a.id} attachment={a} />
+        <AttachmentRow key={a.id} attachment={a} hookId={hookId} />
       ))}
     </ul>
   );

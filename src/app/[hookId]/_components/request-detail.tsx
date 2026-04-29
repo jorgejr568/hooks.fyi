@@ -106,7 +106,7 @@ export function RequestDetail({ hookId, requestId }: Props) {
             <KvTable data={detail.query} emptyLabel="No query parameters" />
           </TabsContent>
           <TabsContent value="files">
-            <AttachmentsList items={detail.attachments} />
+            <AttachmentsList items={detail.attachments} hookId={hookId} />
           </TabsContent>
         </div>
       </Tabs>
