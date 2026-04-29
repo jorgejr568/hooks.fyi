@@ -42,16 +42,14 @@ export async function parseRequest(
   const hasBody = !["GET", "HEAD"].includes(req.method.toUpperCase());
 
   if (hasBody) {
-    const rawBuf = Buffer.from(await req.arrayBuffer());
-    bodySize = rawBuf.byteLength;
     const isMultipart = contentType?.toLowerCase().startsWith("multipart/form-data");
     let multipartParsed = false;
+    let rawBuf: Buffer | null = null;
 
-    if (isMultipart && rawBuf.byteLength > 0) {
+    if (isMultipart) {
+      const cloned = req.clone();
       try {
-        const fd = await new Response(rawBuf, {
-          headers: { "content-type": contentType! },
-        }).formData();
+        const fd = await req.formData();
         const textParts: Record<string, string | string[]> = {};
         for (const [name, value] of fd.entries()) {
           if (typeof value === "string") {
@@ -78,12 +76,15 @@ export async function parseRequest(
         bodySize = Buffer.byteLength(serialized);
         body = serialized.length > 0 ? serialized : null;
         multipartParsed = true;
-      } catch {
-        // Malformed multipart — fall through to raw bytes.
+      } catch (err) {
+        console.error("[ingest] multipart parse failed, falling back to raw:", err);
+        rawBuf = Buffer.from(await cloned.arrayBuffer());
       }
     }
 
     if (!multipartParsed) {
+      if (!rawBuf) rawBuf = Buffer.from(await req.arrayBuffer());
+      bodySize = rawBuf.byteLength;
       const slice = rawBuf.byteLength > opts.maxBodyBytes ? rawBuf.subarray(0, opts.maxBodyBytes) : rawBuf;
       bodyTruncated = rawBuf.byteLength > opts.maxBodyBytes;
       if (contentType && TEXTUAL_CT.test(contentType)) {
