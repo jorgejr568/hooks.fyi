@@ -10,6 +10,10 @@ interface Props {
   body: string | null;
   bodyTruncated: boolean;
   contentType: string | null;
+  /** When the full body overflowed to S3, the URL to fetch it. */
+  fullBodyUrl?: string | null;
+  /** Original byte count, used in the "Showing first N of M" hint. */
+  fullBodySize?: number | null;
 }
 
 const jsonTheme = {
@@ -70,7 +74,19 @@ function extensionFor(ct: string | null): string {
 
 type ViewMode = "decoded" | "raw";
 
-export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} kB`;
+  return `${(n / 1024 / 1024).toFixed(2)} MB`;
+}
+
+export function BodyViewer({
+  body,
+  bodyTruncated,
+  contentType,
+  fullBodyUrl,
+  fullBodySize,
+}: Props) {
   const [copied, setCopied] = useState(false);
   const [mode, setMode] = useState<ViewMode>("decoded");
 
@@ -151,6 +167,22 @@ export function BodyViewer({ body, bodyTruncated, contentType }: Props) {
 
   return (
     <div className="overflow-hidden rounded-md border border-border/50">
+      {bodyTruncated && fullBodyUrl && (
+        <div className="flex items-center justify-between gap-2 border-b border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
+          <span>
+            Showing first {body ? formatBytes(Buffer.byteLength(body, "utf8")) : "0 B"}
+            {fullBodySize ? ` of ${formatBytes(fullBodySize)} total` : ""}.
+          </span>
+          <a
+            href={fullBodyUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-amber-300 underline-offset-2 hover:underline"
+          >
+            Open full body →
+          </a>
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2 border-b border-border/40 bg-muted/30 px-3 py-2">
         <span className="truncate font-mono text-xs text-muted-foreground">
           {contentType ?? "no content-type"}

@@ -1,6 +1,12 @@
 import busboy from "busboy";
 import { Readable } from "node:stream";
-import type { ParsedRequest, ParseOptions, ParsedFilePart } from "./types";
+import {
+  PayloadTooLargeError,
+  type ParsedRequest,
+  type ParseOptions,
+  type ParsedFilePart,
+  type ParsedRawBody,
+} from "./types";
 
 const TEXTUAL_CT = /^(application\/(json|x-www-form-urlencoded|xml|.*\+json|.*\+xml)|text\/.*)/i;
 
@@ -82,6 +88,33 @@ function collectHeaders(headers: Headers): Record<string, string> {
   return out;
 }
 
+/**
+ * Read the body up to `maxBytes`. Throws PayloadTooLargeError if the stream
+ * exceeds that limit (so callers can return 413 without OOMing).
+ */
+async function readBodyBounded(req: Request, maxBytes: number): Promise<Buffer> {
+  const reader = req.body?.getReader();
+  if (!reader) return Buffer.alloc(0);
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      try {
+        await reader.cancel();
+      } catch {
+        // ignore
+      }
+      throw new PayloadTooLargeError(maxBytes);
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks);
+}
+
 export async function parseRequest(
   req: Request,
   pathSuffix: string,
@@ -95,11 +128,12 @@ export async function parseRequest(
   let bodyTruncated = false;
   let bodySize = 0;
   const files: ParsedFilePart[] = [];
+  let rawBody: ParsedRawBody | null = null;
 
   const hasBody = !["GET", "HEAD"].includes(req.method.toUpperCase());
 
   if (hasBody) {
-    const rawBuf = Buffer.from(await req.arrayBuffer());
+    const rawBuf = await readBodyBounded(req, opts.maxRequestBytes);
     bodySize = rawBuf.byteLength;
     const isMultipart = contentType?.toLowerCase().startsWith("multipart/form-data");
     let multipartParsed = false;
@@ -118,14 +152,27 @@ export async function parseRequest(
     }
 
     if (!multipartParsed) {
-      const slice = rawBuf.byteLength > opts.maxBodyBytes ? rawBuf.subarray(0, opts.maxBodyBytes) : rawBuf;
-      bodyTruncated = rawBuf.byteLength > opts.maxBodyBytes;
+      const overflow = rawBuf.byteLength > opts.maxBodyPreviewBytes;
+      const slice = overflow ? rawBuf.subarray(0, opts.maxBodyPreviewBytes) : rawBuf;
+      bodyTruncated = overflow;
       if (contentType && TEXTUAL_CT.test(contentType)) {
         body = slice.toString("utf8");
       } else if (slice.length === 0) {
         body = null;
       } else {
         body = slice.toString("base64");
+      }
+      if (overflow) {
+        // The persister will upload these full bytes to S3. Cap at maxFileBytes
+        // since S3 attachments share that ceiling — anything beyond that is
+        // already discarded by the maxRequestBytes check above in practice.
+        const truncatedAtFileCap = rawBuf.byteLength > opts.maxFileBytes;
+        const uploadBuf = truncatedAtFileCap ? rawBuf.subarray(0, opts.maxFileBytes) : rawBuf;
+        rawBody = {
+          bytes: new Uint8Array(uploadBuf.buffer, uploadBuf.byteOffset, uploadBuf.byteLength),
+          contentType,
+          truncatedAtFileCap,
+        };
       }
     }
   }
@@ -140,6 +187,7 @@ export async function parseRequest(
     bodyTruncated,
     bodySize,
     files,
+    rawBody,
     ip: pickIp(req.headers),
     userAgent: req.headers.get("user-agent"),
   };

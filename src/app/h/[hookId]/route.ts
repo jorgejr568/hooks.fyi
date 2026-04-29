@@ -1,40 +1,8 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { env } from "@/lib/env";
-import { parseRequest } from "@/lib/ingest/parse-request";
-import { persistRequest } from "@/lib/ingest/persist-request";
-import { hookEvents } from "@/lib/events/hook-events";
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { handleIngest } from "./_handle";
 
 async function handle(req: Request, ctx: { params: Promise<{ hookId: string }> }) {
   const { hookId } = await ctx.params;
-  if (!UUID_RE.test(hookId)) {
-    return NextResponse.json({ error: "invalid hook id" }, { status: 400 });
-  }
-  const hook = await prisma.hook.findUnique({ where: { id: hookId }, select: { id: true } });
-  if (!hook) {
-    return NextResponse.json({ error: "hook not found" }, { status: 404 });
-  }
-
-  const url = new URL(req.url);
-  const prefix = `/h/${hookId}`;
-  const pathSuffix = url.pathname.startsWith(prefix)
-    ? url.pathname.slice(prefix.length) || "/"
-    : url.pathname;
-
-  const parsed = await parseRequest(req, pathSuffix, {
-    maxBodyBytes: env.MAX_BODY_BYTES,
-    maxFileBytes: env.MAX_FILE_BYTES,
-  });
-
-  const result = await persistRequest({ hookId, parsed });
-  hookEvents.publish(hookId, { type: "request.created", requestId: result.id });
-
-  return NextResponse.json(
-    { received: true, requestId: result.id, at: result.createdAt.toISOString() },
-    { status: 200 },
-  );
+  return handleIngest(req, hookId, []);
 }
 
 export const GET = handle;

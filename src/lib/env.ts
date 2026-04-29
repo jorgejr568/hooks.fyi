@@ -13,8 +13,14 @@ const schema = z.object({
     .transform((v) => v === "true"),
   NEXT_PUBLIC_APP_URL: z.string().url(),
   HOOK_PUBLIC_HOST: z.string().min(1),
-  MAX_BODY_BYTES: z.coerce.number().int().positive().default(1_048_576),
-  MAX_FILE_BYTES: z.coerce.number().int().positive().default(52_428_800),
+  // Bytes of the body kept inline in Postgres (Request.body). Bodies bigger
+  // than this overflow to S3 as a synthetic RAW_BODY attachment.
+  MAX_BODY_PREVIEW_BYTES: z.coerce.number().int().positive().default(262_144), // 256 KB
+  // Hard ceiling on a single request's total body size. Anything larger is
+  // rejected with HTTP 413 — protects the worker from OOM.
+  MAX_REQUEST_BYTES: z.coerce.number().int().positive().default(104_857_600), // 100 MB
+  // Per-file cap inside multipart/form-data and for body overflow uploads.
+  MAX_FILE_BYTES: z.coerce.number().int().positive().default(52_428_800), // 50 MB
 });
 
 export type Env = z.infer<typeof schema>;
@@ -34,7 +40,8 @@ const buildPlaceholder: Env = {
   S3_FORCE_PATH_STYLE: true,
   NEXT_PUBLIC_APP_URL: "http://localhost:3000",
   HOOK_PUBLIC_HOST: "localhost:3000",
-  MAX_BODY_BYTES: 1_048_576,
+  MAX_BODY_PREVIEW_BYTES: 262_144,
+  MAX_REQUEST_BYTES: 104_857_600,
   MAX_FILE_BYTES: 52_428_800,
 };
 

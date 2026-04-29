@@ -21,6 +21,8 @@ export interface RequestSummary {
   createdAt: string;
 }
 
+export type AttachmentKind = "MULTIPART_FILE" | "RAW_BODY";
+
 export interface RequestDetail extends RequestSummary {
   query: Record<string, string | string[]>;
   headers: Record<string, string>;
@@ -30,6 +32,7 @@ export interface RequestDetail extends RequestSummary {
   userAgent: string | null;
   attachments: Array<{
     id: string;
+    kind: AttachmentKind;
     fieldName: string | null;
     fileName: string | null;
     contentType: string | null;

@@ -148,6 +148,35 @@ function AttachmentRow({ attachment, hookId }: { attachment: Attachment; hookId:
   );
 }
 
+function Section({
+  title,
+  hint,
+  items,
+  hookId,
+}: {
+  title: string;
+  hint?: string;
+  items: Attachment[];
+  hookId: string;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between px-1">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </span>
+        {hint && <span className="text-[11px] text-muted-foreground/70">{hint}</span>}
+      </div>
+      <ul className="divide-y divide-border/40 overflow-hidden rounded-md border border-border/50">
+        {items.map((a) => (
+          <AttachmentRow key={a.id} attachment={a} hookId={hookId} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function AttachmentsList({
   items,
   hookId,
@@ -158,11 +187,17 @@ export function AttachmentsList({
   if (items.length === 0) {
     return <p className="px-1 py-4 text-sm text-muted-foreground">No file attachments</p>;
   }
+  const multipart = items.filter((a) => a.kind === "MULTIPART_FILE");
+  const rawBodies = items.filter((a) => a.kind === "RAW_BODY");
   return (
-    <ul className="divide-y divide-border/40 overflow-hidden rounded-md border border-border/50">
-      {items.map((a) => (
-        <AttachmentRow key={a.id} attachment={a} hookId={hookId} />
-      ))}
-    </ul>
+    <div className="space-y-4">
+      <Section title="Multipart files" items={multipart} hookId={hookId} />
+      <Section
+        title="Body overflow"
+        hint="full request body — too large to keep inline"
+        items={rawBodies}
+        hookId={hookId}
+      />
+    </div>
   );
 }

@@ -37,17 +37,24 @@ model Request {
   @@index([hookId, createdAt(sort: Desc)])
 }
 
+enum AttachmentKind {
+  MULTIPART_FILE
+  RAW_BODY
+}
+
 model Attachment {
-  id          String   @id @default(uuid()) @db.Uuid
-  requestId   String   @db.Uuid
-  fieldName   String?  @db.VarChar(255)
-  fileName    String?  @db.VarChar(512)
-  contentType String?  @db.VarChar(255)
+  id          String          @id @default(uuid()) @db.Uuid
+  requestId   String          @db.Uuid
+  kind        AttachmentKind  @default(MULTIPART_FILE)
+  fieldName   String?         @db.VarChar(255)
+  fileName    String?         @db.VarChar(512)
+  contentType String?         @db.VarChar(255)
   size        BigInt
-  s3Key       String   @unique @db.VarChar(1024)
-  createdAt   DateTime @default(now())
+  s3Key       String          @unique @db.VarChar(1024)
+  createdAt   DateTime        @default(now())
 
   request     Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   @@index([requestId])
+  @@index([requestId, kind])
 }

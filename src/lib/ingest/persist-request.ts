@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { putObject, buildAttachmentKey } from "@/lib/s3";
+import { fileExtension } from "@/lib/format/file-extension";
 import type { ParsedRequest } from "./types";
 
 export interface PersistResult {
@@ -9,22 +10,25 @@ export interface PersistResult {
   createdAt: Date;
 }
 
+interface AttachmentRecord {
+  id: string;
+  kind: "MULTIPART_FILE" | "RAW_BODY";
+  fieldName: string | null;
+  fileName: string | null;
+  contentType: string | null;
+  size: bigint;
+  s3Key: string;
+}
+
 export async function persistRequest(args: {
   hookId: string;
   parsed: ParsedRequest;
 }): Promise<PersistResult> {
   const { hookId, parsed } = args;
   const requestId = randomUUID();
+  const attachmentRecords: AttachmentRecord[] = [];
 
-  const attachmentRecords: Array<{
-    id: string;
-    fieldName: string | null;
-    fileName: string | null;
-    contentType: string | null;
-    size: bigint;
-    s3Key: string;
-  }> = [];
-
+  // Multipart files — one S3 object + one Attachment row each.
   for (const file of parsed.files) {
     const attachmentId = randomUUID();
     const s3Key = buildAttachmentKey({
@@ -41,10 +45,39 @@ export async function persistRequest(args: {
     });
     attachmentRecords.push({
       id: attachmentId,
+      kind: "MULTIPART_FILE",
       fieldName: file.fieldName,
       fileName: file.fileName,
       contentType: file.contentType,
       size: BigInt(file.bytes.byteLength),
+      s3Key,
+    });
+  }
+
+  // Body overflow — full bytes go to S3 as a synthetic RAW_BODY attachment.
+  if (parsed.rawBody) {
+    const attachmentId = randomUUID();
+    const ext = fileExtension(null, parsed.rawBody.contentType);
+    const fileName = `body.${ext}`;
+    const s3Key = buildAttachmentKey({
+      hookId,
+      requestId,
+      attachmentId,
+      fileName,
+    });
+    await putObject({
+      key: s3Key,
+      body: Buffer.from(parsed.rawBody.bytes),
+      contentType: parsed.rawBody.contentType ?? "application/octet-stream",
+      contentLength: parsed.rawBody.bytes.byteLength,
+    });
+    attachmentRecords.push({
+      id: attachmentId,
+      kind: "RAW_BODY",
+      fieldName: null,
+      fileName,
+      contentType: parsed.rawBody.contentType,
+      size: BigInt(parsed.rawBody.bytes.byteLength),
       s3Key,
     });
   }
@@ -66,6 +99,7 @@ export async function persistRequest(args: {
       attachments: {
         create: attachmentRecords.map((a) => ({
           id: a.id,
+          kind: a.kind,
           fieldName: a.fieldName,
           fileName: a.fileName,
           contentType: a.contentType,

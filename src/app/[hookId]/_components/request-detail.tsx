@@ -7,6 +7,7 @@ import { MethodBadge } from "./method-badge";
 import { KvTable } from "./kv-table";
 import { BodyViewer } from "./body-viewer";
 import { AttachmentsList } from "./attachments-list";
+import { fileExtension } from "@/lib/format/file-extension";
 import type { RequestDetail as RequestDetailDto } from "@/types/api";
 
 interface Props {
@@ -58,6 +59,13 @@ export function RequestDetail({ hookId, requestId }: Props) {
     );
   }
 
+  const rawBody = detail.attachments.find((a) => a.kind === "RAW_BODY");
+  const fullBodyUrl = rawBody
+    ? `/api/files/${hookId}/${rawBody.id}.${fileExtension(rawBody.fileName, rawBody.contentType)}?inline=1`
+    : null;
+  const fullBodySize = rawBody ? rawBody.size : detail.bodyTruncated ? detail.bodySize : null;
+  const multipartCount = detail.attachments.filter((a) => a.kind === "MULTIPART_FILE").length;
+
   return (
     <section className="flex min-w-0 flex-col bg-background">
       <div className="border-b border-border/50 px-6 py-4">
@@ -88,7 +96,7 @@ export function RequestDetail({ hookId, requestId }: Props) {
             Query <span className="ml-1 text-muted-foreground">({Object.keys(detail.query).length})</span>
           </TabsTrigger>
           <TabsTrigger value="files">
-            Files <span className="ml-1 text-muted-foreground">({detail.attachments.length})</span>
+            Files <span className="ml-1 text-muted-foreground">({multipartCount}{rawBody ? "+1" : ""})</span>
           </TabsTrigger>
         </TabsList>
         <div className="flex-1 overflow-auto px-6 py-4">
@@ -97,6 +105,8 @@ export function RequestDetail({ hookId, requestId }: Props) {
               body={detail.body}
               bodyTruncated={detail.bodyTruncated}
               contentType={detail.contentType}
+              fullBodyUrl={fullBodyUrl}
+              fullBodySize={fullBodySize}
             />
           </TabsContent>
           <TabsContent value="headers">

@@ -13,11 +13,13 @@ export async function GET(
       attachments: {
         select: {
           id: true,
+          kind: true,
           fieldName: true,
           fileName: true,
           contentType: true,
           size: true,
         },
+        orderBy: { createdAt: "asc" },
       },
     },
   });
@@ -39,6 +41,7 @@ export async function GET(
     userAgent: row.userAgent,
     attachments: row.attachments.map((a) => ({
       id: a.id,
+      kind: a.kind,
       fieldName: a.fieldName,
       fileName: a.fileName,
       contentType: a.contentType,
