@@ -39,3 +39,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# env
+.env
+.env.local
+.env.test
+.env.*.local
+
+# minio data
+docker/minio/data/
+docker/postgres/data/
+
+# Prisma
+prisma/*.db
