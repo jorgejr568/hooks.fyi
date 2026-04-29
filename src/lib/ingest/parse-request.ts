@@ -42,12 +42,16 @@ export async function parseRequest(
   const hasBody = !["GET", "HEAD"].includes(req.method.toUpperCase());
 
   if (hasBody) {
+    const rawBuf = Buffer.from(await req.arrayBuffer());
+    bodySize = rawBuf.byteLength;
     const isMultipart = contentType?.toLowerCase().startsWith("multipart/form-data");
     let multipartParsed = false;
 
-    if (isMultipart) {
+    if (isMultipart && rawBuf.byteLength > 0) {
       try {
-        const fd = await req.formData();
+        const fd = await new Response(rawBuf, {
+          headers: { "content-type": contentType! },
+        }).formData();
         const textParts: Record<string, string | string[]> = {};
         for (const [name, value] of fd.entries()) {
           if (typeof value === "string") {
@@ -75,15 +79,13 @@ export async function parseRequest(
         body = serialized.length > 0 ? serialized : null;
         multipartParsed = true;
       } catch {
-        // Malformed multipart (missing boundary, empty body, etc.) — fall through to raw read.
+        // Malformed multipart — fall through to raw bytes.
       }
     }
 
     if (!multipartParsed) {
-      const buf = Buffer.from(await req.arrayBuffer());
-      bodySize = buf.byteLength;
-      const slice = bodySize > opts.maxBodyBytes ? buf.subarray(0, opts.maxBodyBytes) : buf;
-      bodyTruncated = bodySize > opts.maxBodyBytes;
+      const slice = rawBuf.byteLength > opts.maxBodyBytes ? rawBuf.subarray(0, opts.maxBodyBytes) : rawBuf;
+      bodyTruncated = rawBuf.byteLength > opts.maxBodyBytes;
       if (contentType && TEXTUAL_CT.test(contentType)) {
         body = slice.toString("utf8");
       } else if (slice.length === 0) {
