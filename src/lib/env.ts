@@ -21,6 +21,9 @@ const schema = z.object({
   MAX_REQUEST_BYTES: z.coerce.number().int().positive().default(104_857_600), // 100 MB
   // Per-file cap inside multipart/form-data and for body overflow uploads.
   MAX_FILE_BYTES: z.coerce.number().int().positive().default(52_428_800), // 50 MB
+  // Logging
+  LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).default("info"),
+  LOG_JSON: z.enum(["true", "false"]).optional(),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -43,6 +46,8 @@ const buildPlaceholder: Env = {
   MAX_BODY_PREVIEW_BYTES: 262_144,
   MAX_REQUEST_BYTES: 104_857_600,
   MAX_FILE_BYTES: 52_428_800,
+  LOG_LEVEL: "info",
+  LOG_JSON: undefined,
 };
 
 let cached: Env | null = null;

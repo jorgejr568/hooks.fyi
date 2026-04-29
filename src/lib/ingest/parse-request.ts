@@ -1,5 +1,6 @@
 import busboy from "busboy";
 import { Readable } from "node:stream";
+import { logger } from "@/lib/log";
 import {
   PayloadTooLargeError,
   type ParsedRequest,
@@ -147,7 +148,10 @@ export async function parseRequest(
         body = serialized.length > 0 ? serialized : null;
         multipartParsed = true;
       } catch (err) {
-        console.error("[ingest] multipart parse failed, falling back to raw:", err);
+        logger.warn(
+          { err: err instanceof Error ? { name: err.name, message: err.message } : err, contentType },
+          "multipart parse failed, falling back to raw",
+        );
       }
     }
 
