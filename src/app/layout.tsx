@@ -11,6 +11,18 @@ export const metadata: Metadata = {
   description:
     "Create a disposable URL, send any HTTP request to it, and inspect every header, body, and file in real time.",
   metadataBase: new URL("https://hooks.fyi"),
+  applicationName: "Hooks.Fyi",
+  appleWebApp: { title: "Hooks.Fyi" },
+  manifest: "/site.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-96x96.png", type: "image/png", sizes: "96x96" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
