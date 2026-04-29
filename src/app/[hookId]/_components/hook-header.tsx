@@ -74,11 +74,17 @@ export function HookHeader({ hookId, name, createdAt, ingestUrl }: Props) {
           </Button>
 
           <Dialog>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive">
-                <Trash2 className="size-4" />
-                <span className="sr-only">Delete hook</span>
-              </Button>
+            <DialogTrigger
+              render={
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                />
+              }
+            >
+              <Trash2 className="size-4" />
+              <span className="sr-only">Delete hook</span>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>

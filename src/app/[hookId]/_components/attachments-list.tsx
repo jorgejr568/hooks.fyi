@@ -27,10 +27,12 @@ export function AttachmentsList({ items }: { items: RequestDetail["attachments"]
               <span>{formatBytes(a.size)}</span>
             </div>
           </div>
-          <Button asChild size="sm" variant="secondary">
-            <a href={`/api/files/${a.id}`} download>
-              <Download className="size-4" />
-            </a>
+          <Button
+            size="sm"
+            variant="secondary"
+            render={<a href={`/api/files/${a.id}`} download />}
+          >
+            <Download className="size-4" />
           </Button>
         </li>
       ))}

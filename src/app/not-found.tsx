@@ -9,8 +9,8 @@ export default function NotFound() {
       <p className="mt-3 text-muted-foreground">
         The hook you&rsquo;re looking for has been deleted or never existed.
       </p>
-      <Button asChild className="mt-6">
-        <Link href="/">Create a new hook</Link>
+      <Button className="mt-6" render={<Link href="/" />}>
+        Create a new hook
       </Button>
     </main>
   );
