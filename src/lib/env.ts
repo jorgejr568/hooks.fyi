@@ -17,5 +17,40 @@ const schema = z.object({
   MAX_FILE_BYTES: z.coerce.number().int().positive().default(52_428_800),
 });
 
-export const env = schema.parse(process.env);
 export type Env = z.infer<typeof schema>;
+
+// Lazy proxy so importing this module never crashes in environments where
+// env vars aren't set yet (e.g. `next build` page-data collection inside Docker).
+// During the Next.js build phase we substitute placeholder values so route
+// handlers can be statically analyzed without real secrets.
+const BUILD_PHASE = "phase-production-build";
+const buildPlaceholder: Env = {
+  DATABASE_URL: "postgresql://placeholder:placeholder@localhost:5432/placeholder",
+  S3_ENDPOINT: "http://localhost:9000",
+  S3_REGION: "us-east-1",
+  S3_BUCKET: "placeholder",
+  S3_ACCESS_KEY_ID: "placeholder",
+  S3_SECRET_ACCESS_KEY: "placeholder",
+  S3_FORCE_PATH_STYLE: true,
+  NEXT_PUBLIC_APP_URL: "http://localhost:3000",
+  HOOK_PUBLIC_HOST: "localhost:3000",
+  MAX_BODY_BYTES: 1_048_576,
+  MAX_FILE_BYTES: 52_428_800,
+};
+
+let cached: Env | null = null;
+function load(): Env {
+  if (cached) return cached;
+  if (process.env.NEXT_PHASE === BUILD_PHASE) {
+    cached = buildPlaceholder;
+    return cached;
+  }
+  cached = schema.parse(process.env);
+  return cached;
+}
+
+export const env = new Proxy({} as Env, {
+  get(_target, prop) {
+    return load()[prop as keyof Env];
+  },
+}) as Env;

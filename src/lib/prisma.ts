@@ -15,8 +15,19 @@ function buildClient(): PrismaClient {
   });
 }
 
-export const prisma = globalForPrisma.prisma ?? buildClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+function getClient(): PrismaClient {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = buildClient();
+  }
+  return globalForPrisma.prisma;
 }
+
+// Lazy proxy: importing `prisma` is safe at build time when DATABASE_URL is
+// unset; the client is constructed on first property access.
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    const client = getClient() as unknown as Record<string | symbol, unknown>;
+    const value = client[prop];
+    return typeof value === "function" ? (value as (...a: unknown[]) => unknown).bind(client) : value;
+  },
+}) as PrismaClient;

@@ -1,6 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# Dependencies
 /node_modules
 /.pnp
 .pnp.*
@@ -10,48 +10,45 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
+# Testing
 /coverage
 
-# next.js
+# Next.js
 /.next/
 /out/
-
-# production
 /build
+*.tsbuildinfo
+next-env.d.ts
 
-# misc
+# Misc
 .DS_Store
 *.pem
 
-# debug
+# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Env (commit only the example)
+.env
+.env.*
 !.env.example
 
-# vercel
+# Vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# env
-.env
-.env.local
-.env.test
-.env.*.local
-
-# minio data
+# Local container data
 docker/minio/data/
 docker/postgres/data/
 
-# Prisma
+# Prisma local db files
 prisma/*.db
 
+# Generated Prisma client
 /src/generated/prisma
+
+# IDE
+.vscode/
+.idea/
+*.swp
