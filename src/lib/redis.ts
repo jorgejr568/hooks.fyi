@@ -18,9 +18,7 @@ export function getRedis(): Redis | null {
     enableOfflineQueue: false,
     lazyConnect: false,
   });
-  client.on("error", (err) =>
-    logger.warn({ err: err.message }, "redis error"),
-  );
+  client.on("error", (err) => logger.warn({ err: err.message }, "redis error"));
   globalForRedis.redis = client;
   return client;
 }
