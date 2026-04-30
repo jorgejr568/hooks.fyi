@@ -46,6 +46,21 @@ services:
     volumes:
       - ./docker/minio/init.sh:/init.sh:ro
 
+  redis:
+    image: redis:7-alpine
+    container_name: hooksfyi-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
 volumes:
   postgres-data:
   minio-data:
+  redis-data:
