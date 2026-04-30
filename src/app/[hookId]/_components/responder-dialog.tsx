@@ -397,26 +397,32 @@ function RuleCard({
 }) {
   return (
     <div className="rounded border border-border/40 bg-muted/20 p-2.5">
-      <div className="mb-2 flex items-center gap-1.5">
-        <select
-          value={rule.method}
-          onChange={(e) =>
-            onChange({ ...rule, method: e.target.value as Method })
-          }
-          className={`${inputCls} w-28`}
-        >
-          {METHODS.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
-        <input
-          value={rule.pathGlob}
-          onChange={(e) => onChange({ ...rule, pathGlob: e.target.value })}
-          placeholder="/users/*"
-          className={`${inputCls} flex-1 font-mono`}
-        />
+      <div className="mb-2 flex items-end gap-1.5">
+        <Field label="Method">
+          <select
+            value={rule.method}
+            onChange={(e) =>
+              onChange({ ...rule, method: e.target.value as Method })
+            }
+            className={`${inputCls} w-28`}
+          >
+            {METHODS.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <div className="flex-1">
+          <Field label="Path glob">
+            <input
+              value={rule.pathGlob}
+              onChange={(e) => onChange({ ...rule, pathGlob: e.target.value })}
+              placeholder="/users/*"
+              className={`${inputCls} font-mono`}
+            />
+          </Field>
+        </div>
         <Button
           size="sm"
           variant="ghost"
