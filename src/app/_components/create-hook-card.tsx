@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,8 @@ export function CreateHookCard() {
   const [name, setName] = useState("");
   const [pending, startTransition] = useTransition();
 
-  const onCreate = () => {
+  const onCreate = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     startTransition(async () => {
       try {
         const res = await fetch("/api/hooks", {
@@ -52,37 +53,39 @@ export function CreateHookCard() {
           every byte right here.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">
-            Name <span className="text-muted-foreground">(optional)</span>
-          </Label>
-          <Input
-            id="name"
-            placeholder="e.g. Stripe sandbox webhook"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={120}
+      <form onSubmit={onCreate}>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">
+              Name <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <Input
+              id="name"
+              placeholder="e.g. Stripe sandbox webhook"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={120}
+              disabled={pending}
+            />
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button
+            type="submit"
+            className="w-full cursor-pointer"
+            size="lg"
             disabled={pending}
-          />
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button
-          className="w-full"
-          size="lg"
-          onClick={onCreate}
-          disabled={pending}
-        >
-          {pending ? (
-            <>
-              <Loader2 className="size-4 animate-spin" /> Creating&hellip;
-            </>
-          ) : (
-            <>Create hook &rarr;</>
-          )}
-        </Button>
-      </CardFooter>
+          >
+            {pending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" /> Creating&hellip;
+              </>
+            ) : (
+              <>Create hook &rarr;</>
+            )}
+          </Button>
+        </CardFooter>
+      </form>
     </Card>
   );
 }
