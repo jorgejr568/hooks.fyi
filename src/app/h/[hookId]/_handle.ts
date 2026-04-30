@@ -5,9 +5,22 @@ import { parseRequest } from "@/lib/ingest/parse-request";
 import { persistRequest } from "@/lib/ingest/persist-request";
 import { hookEvents } from "@/lib/events/hook-events";
 import { PayloadTooLargeError } from "@/lib/ingest/types";
+import { checkHookRateLimit } from "@/lib/rate-limit";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function rateLimitHeaders(
+  limit: number,
+  remaining: number,
+  resetSeconds: number,
+): Record<string, string> {
+  return {
+    "X-RateLimit-Limit": String(limit),
+    "X-RateLimit-Remaining": String(remaining),
+    "X-RateLimit-Reset": String(resetSeconds),
+  };
+}
 
 export async function handleIngest(
   req: Request,
@@ -17,6 +30,25 @@ export async function handleIngest(
   if (!UUID_RE.test(hookId)) {
     return NextResponse.json({ error: "invalid hook id" }, { status: 400 });
   }
+
+  const rl = await checkHookRateLimit(hookId);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      {
+        error: "rate limit exceeded",
+        limit: rl.limit,
+        retryAfter: rl.resetSeconds,
+      },
+      {
+        status: 429,
+        headers: {
+          ...rateLimitHeaders(rl.limit, 0, rl.resetSeconds),
+          "Retry-After": String(rl.resetSeconds),
+        },
+      },
+    );
+  }
+
   const hook = await prisma.hook.findUnique({
     where: { id: hookId },
     select: { id: true },
@@ -53,6 +85,9 @@ export async function handleIngest(
       requestId: result.id,
       at: result.createdAt.toISOString(),
     },
-    { status: 200 },
+    {
+      status: 200,
+      headers: rateLimitHeaders(rl.limit, rl.remaining, rl.resetSeconds),
+    },
   );
 }
