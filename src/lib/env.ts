@@ -26,6 +26,13 @@ const schema = z.object({
     .enum(["fatal", "error", "warn", "info", "debug", "trace"])
     .default("info"),
   LOG_JSON: z.enum(["true", "false"]).optional(),
+  // Rate limiting (per-hook, fixed window, backed by Redis).
+  // When REDIS_URL is unset the limiter is a no-op — useful in tests/dev.
+  REDIS_URL: z.string().url().optional(),
+  // Max requests allowed per hook in each window. Set to 0 to disable.
+  RATE_LIMIT_PER_HOOK: z.coerce.number().int().nonnegative().default(100),
+  // Window size in seconds. Default is one minute → "100/min" out of the box.
+  RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -51,6 +58,9 @@ const buildPlaceholder: Env = {
   MAX_FILE_BYTES: 52_428_800,
   LOG_LEVEL: "info",
   LOG_JSON: undefined,
+  REDIS_URL: undefined,
+  RATE_LIMIT_PER_HOOK: 100,
+  RATE_LIMIT_WINDOW_SECONDS: 60,
 };
 
 let cached: Env | null = null;

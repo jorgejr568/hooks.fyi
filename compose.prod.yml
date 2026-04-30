@@ -72,6 +72,17 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-hooks}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-hooksfyi}?schema=public
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   app:
     build:
       context: .
@@ -84,6 +95,8 @@ services:
         condition: service_completed_successfully
       migrate:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
@@ -98,7 +111,11 @@ services:
       HOOK_PUBLIC_HOST: ${HOOK_PUBLIC_HOST:?set HOOK_PUBLIC_HOST in .env}
       MAX_BODY_BYTES: ${MAX_BODY_BYTES:-1048576}
       MAX_FILE_BYTES: ${MAX_FILE_BYTES:-52428800}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      RATE_LIMIT_PER_HOOK: ${RATE_LIMIT_PER_HOOK:-100}
+      RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
 
 volumes:
   postgres-data:
   minio-data:
+  redis-data:
