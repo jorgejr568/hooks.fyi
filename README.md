@@ -12,14 +12,14 @@ Disposable HTTP request bins. Create a URL, send any request to it (any method, 
 
 ## Local development
 
-Prereqs: Node 22+, pnpm 9+, Docker.
+Prereqs: Bun 1.3+, Docker.
 
 ```bash
-pnpm install
+bun install
 cp .env.example .env.local       # already populated for local docker
-pnpm db:up                       # starts postgres + minio in docker
-pnpm db:migrate                  # applies prisma migrations
-pnpm dev                         # http://localhost:3000
+bun run db:up                    # starts postgres + minio in docker
+bun run db:migrate               # applies prisma migrations
+bun run dev                      # http://localhost:3000
 ```
 
 MinIO console: http://localhost:9101 (creds from `.env.local`).
@@ -28,7 +28,7 @@ Postgres: `postgres://hooks:hooks@localhost:5433/hooksfyi`.
 ## Tests
 
 ```bash
-pnpm test                        # vitest (uses .env.test against the same docker postgres)
+bun run test                     # vitest (uses .env.test against the same docker postgres)
 ```
 
 ## How it works
@@ -75,7 +75,7 @@ docker run --rm -p 3000:3000 \
   hooksfyi:latest
 ```
 
-Run migrations against your managed Postgres before the first boot. Either locally with `pnpm db:deploy` (needs `DATABASE_URL` set), or by building and running the dedicated migrator image:
+Run migrations against your managed Postgres before the first boot. Either locally with `bun run db:deploy` (needs `DATABASE_URL` set), or by building and running the dedicated migrator image:
 
 ````bash
 docker build -f Dockerfile.migrate -t hooksfyi-migrate:latest .
