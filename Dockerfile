@@ -1,28 +1,26 @@
 # syntax=docker/dockerfile:1.7
 
-ARG NODE_VERSION=22-alpine
+ARG BUN_VERSION=1.3-alpine
 
-FROM node:${NODE_VERSION} AS base
-RUN corepack enable
+FROM oven/bun:${BUN_VERSION} AS base
 WORKDIR /app
 
 # ---- dependencies ----
 FROM base AS deps
-COPY package.json pnpm-lock.yaml ./
+COPY package.json bun.lock ./
 COPY prisma ./prisma
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+RUN bun install --frozen-lockfile
 
 # ---- builder ----
 FROM base AS builder
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm exec prisma generate
-RUN pnpm build
+RUN bunx prisma generate
+RUN bun run build
 
 # ---- runner ----
-FROM node:${NODE_VERSION} AS runner
+FROM oven/bun:${BUN_VERSION} AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
@@ -42,4 +40,4 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma          ./prisma
 USER nextjs
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["bun", "server.js"]
