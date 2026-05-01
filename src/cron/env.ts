@@ -16,7 +16,8 @@ const schema = z.object({
 
   // Cron-specific knobs.
   STALE_HOOK_RETENTION_DAYS: z.coerce.number().int().min(1).default(15),
-  CLEANUP_INTERVAL_SECONDS: z.coerce.number().int().min(60).default(86_400),
+  // Cron expression evaluated by Bun.cron — default is 03:00 every day.
+  CLEANUP_CRON: z.string().min(1).default("0 3 * * *"),
   CLEANUP_BATCH_SIZE: z.coerce.number().int().min(1).max(10_000).default(500),
   RUN_ON_START: z
     .enum(["true", "false"])

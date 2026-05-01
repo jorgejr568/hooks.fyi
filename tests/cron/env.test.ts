@@ -12,7 +12,7 @@ describe("parseCronEnv", () => {
       S3_SECRET_ACCESS_KEY: "s",
     });
     expect(e.STALE_HOOK_RETENTION_DAYS).toBe(15);
-    expect(e.CLEANUP_INTERVAL_SECONDS).toBe(86_400);
+    expect(e.CLEANUP_CRON).toBe("0 3 * * *");
     expect(e.CLEANUP_BATCH_SIZE).toBe(500);
     expect(e.RUN_ON_START).toBe(true);
   });

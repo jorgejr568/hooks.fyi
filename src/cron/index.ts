@@ -3,6 +3,12 @@ import { runCleanupSweep } from "@/cron/cleanup-stale-hooks";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/log";
 
+// Minimal declaration of the Bun runtime API we depend on. Avoids pulling in
+// @types/bun (which pollutes web-DOM types and breaks src/lib/s3.ts under tsc).
+declare const Bun: {
+  cron(schedule: string, handler: () => unknown): { stop(): void };
+};
+
 const log = logger.child({ component: "cron" });
 
 async function main() {
@@ -10,7 +16,7 @@ async function main() {
   log.info(
     {
       retentionDays: env.STALE_HOOK_RETENTION_DAYS,
-      intervalSeconds: env.CLEANUP_INTERVAL_SECONDS,
+      schedule: env.CLEANUP_CRON,
       batchSize: env.CLEANUP_BATCH_SIZE,
       runOnStart: env.RUN_ON_START,
     },
@@ -37,12 +43,11 @@ async function main() {
   };
 
   if (env.RUN_ON_START) await tick();
-  const handle = setInterval(tick, env.CLEANUP_INTERVAL_SECONDS * 1000);
+  const job = Bun.cron(env.CLEANUP_CRON, tick);
 
   const shutdown = async (signal: string) => {
     log.info({ signal }, "shutting down");
-    clearInterval(handle);
-    // Allow an in-flight sweep ~10s to finish before forcing exit.
+    job.stop();
     const deadline = Date.now() + 10_000;
     while (running && Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 200));
