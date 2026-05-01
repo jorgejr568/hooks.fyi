@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1.7
+#
+# Long-running cron service that periodically deletes hooks unused for the
+# past STALE_HOOK_RETENTION_DAYS days, including their S3 attachment prefix.
+#
+#   docker build -f Dockerfile.cron -t hooksfyi-cron:latest .
+#   docker run --rm -e DATABASE_URL=... -e S3_ENDPOINT=... ... hooksfyi-cron:latest
+
+ARG NODE_VERSION=22-alpine
+
+FROM node:${NODE_VERSION} AS base
+RUN corepack enable
+WORKDIR /app
+
+# ---- dependencies (incl. devDeps for tsx) ----
+FROM base AS deps
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+# ---- runner ----
+FROM base AS runner
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser  --system --uid 1001 nodejs
+
+COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --chown=nodejs:nodejs package.json pnpm-lock.yaml tsconfig.json ./
+COPY --chown=nodejs:nodejs prisma ./prisma
+COPY --chown=nodejs:nodejs src ./src
+
+# Generate the Prisma client into node_modules so the runtime path resolves.
+RUN pnpm exec prisma generate
+
+USER nodejs
+
+CMD ["pnpm", "exec", "tsx", "src/cron/index.ts"]
