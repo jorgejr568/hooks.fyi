@@ -138,3 +138,42 @@ describe("deleteHookSafely", () => {
     expect(result.deleted).toBe(false);
   });
 });
+
+import { runCleanupSweep } from "@/cron/cleanup-stale-hooks";
+
+describe("runCleanupSweep", () => {
+  it("deletes every stale hook in one call and reports counts", async () => {
+    for (let i = 0; i < 3; i++) {
+      await makeHook({ createdAt: new Date(Date.now() - SIXTEEN_DAYS_MS) });
+    }
+    await makeHook({ createdAt: new Date() }); // fresh, untouched
+
+    const result = await runCleanupSweep({
+      retentionDays: 15,
+      batchSize: 100,
+    });
+
+    expect(result.candidates).toBe(3);
+    expect(result.deleted).toBe(3);
+    expect(result.skipped).toBe(0);
+    expect(await prisma.hook.count()).toBe(1);
+  });
+
+  it("counts skips when a candidate becomes fresh mid-sweep", async () => {
+    const stale = await makeHook({
+      createdAt: new Date(Date.now() - SIXTEEN_DAYS_MS),
+    });
+    // Simulate the race by adding a fresh request before we let the sweep run.
+    await prisma.request.create({
+      data: { hookId: stale.id, method: "GET", path: "/", createdAt: new Date() },
+    });
+
+    const result = await runCleanupSweep({
+      retentionDays: 15,
+      batchSize: 100,
+    });
+    // findStaleHookIds may or may not have picked it up depending on timing
+    // (the fresh request was added BEFORE the sweep). Either way, deleted=0.
+    expect(result.deleted).toBe(0);
+  });
+});

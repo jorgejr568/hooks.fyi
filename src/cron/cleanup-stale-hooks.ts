@@ -65,3 +65,49 @@ export async function deleteHookSafely(args: {
     return { deleted: true, s3Cleaned: false };
   }
 }
+
+export interface SweepResult {
+  candidates: number;
+  deleted: number;
+  skipped: number;
+  s3Failures: number;
+  durationMs: number;
+}
+
+export async function runCleanupSweep(args: {
+  retentionDays: number;
+  batchSize: number;
+}): Promise<SweepResult> {
+  const started = Date.now();
+  const ids = await findStaleHookIds({
+    retentionDays: args.retentionDays,
+    limit: args.batchSize,
+  });
+
+  let deleted = 0;
+  let skipped = 0;
+  let s3Failures = 0;
+
+  for (const id of ids) {
+    const r = await deleteHookSafely({
+      hookId: id,
+      retentionDays: args.retentionDays,
+    });
+    if (r.deleted) {
+      deleted++;
+      if (!r.s3Cleaned) s3Failures++;
+    } else {
+      skipped++;
+    }
+  }
+
+  const result: SweepResult = {
+    candidates: ids.length,
+    deleted,
+    skipped,
+    s3Failures,
+    durationMs: Date.now() - started,
+  };
+  log.info(result, "cleanup sweep complete");
+  return result;
+}
