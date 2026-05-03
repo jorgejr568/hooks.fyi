@@ -16,7 +16,7 @@ describe("parseRequest", () => {
       url: "http://localhost:3000/h/abc?x=1&y=2&y=3",
       headers: {
         "User-Agent": "curl/8",
-        "X-Real-IP": "10.0.0.1",
+        "X-Forwarded-For": "10.0.0.1, 1.2.3.4",
       },
     });
     const parsed = await parseRequest(req, "/extra/path", opts);

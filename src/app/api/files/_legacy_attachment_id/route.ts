@@ -2,26 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getObjectStream } from "@/lib/s3";
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export async function GET(
   req: Request,
-  ctx: { params: Promise<{ hookId: string; fileName: string }> },
+  ctx: { params: Promise<{ attachmentId: string }> },
 ) {
-  const { hookId, fileName } = await ctx.params;
-  if (!UUID_RE.test(hookId)) {
-    return NextResponse.json({ error: "invalid hook id" }, { status: 400 });
-  }
-
-  const dot = fileName.indexOf(".");
-  const idPart = dot === -1 ? fileName : fileName.slice(0, dot);
-  if (!UUID_RE.test(idPart)) {
-    return NextResponse.json({ error: "invalid file id" }, { status: 400 });
-  }
-
-  const att = await prisma.attachment.findFirst({
-    where: { id: idPart, request: { hookId } },
+  const { attachmentId } = await ctx.params;
+  const att = await prisma.attachment.findUnique({
+    where: { id: attachmentId },
     select: {
       s3Key: true,
       fileName: true,
@@ -37,7 +24,7 @@ export async function GET(
 
   const url = new URL(req.url);
   const inline = url.searchParams.get("inline") === "1";
-  const fallbackName = att.fileName || fileName;
+  const fallbackName = att.fileName || "file";
   const headers = new Headers({
     "content-type": att.contentType ?? "application/octet-stream",
     "content-length": String(att.size),

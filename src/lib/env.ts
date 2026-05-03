@@ -33,22 +33,6 @@ const schema = z.object({
   RATE_LIMIT_PER_HOOK: z.coerce.number().int().nonnegative().default(100),
   // Window size in seconds. Default is one minute → "100/min" out of the box.
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
-  // Max POST /api/hooks per IP in each window. Set to 0 to disable.
-  RATE_LIMIT_CREATE_PER_IP: z.coerce.number().int().nonnegative().default(20),
-  RATE_LIMIT_CREATE_WINDOW_SECONDS: z
-    .coerce
-    .number()
-    .int()
-    .positive()
-    .default(3600), // 20/hour by default
-  /**
-   * Comma-separated list of CIDRs or exact IPs whose X-Forwarded-For we trust.
-   * Empty (default) means do not trust XFF; client IP comes from the network
-   * peer / x-real-ip when present.
-   */
-  TRUSTED_PROXY_IPS: z.string().default(""),
-  // Per-IP cap on concurrent SSE stream connections. 0 disables the cap.
-  SSE_MAX_CONNECTIONS_PER_IP: z.coerce.number().int().nonnegative().default(20),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -77,10 +61,6 @@ const buildPlaceholder: Env = {
   REDIS_URL: undefined,
   RATE_LIMIT_PER_HOOK: 100,
   RATE_LIMIT_WINDOW_SECONDS: 60,
-  RATE_LIMIT_CREATE_PER_IP: 20,
-  RATE_LIMIT_CREATE_WINDOW_SECONDS: 3600,
-  TRUSTED_PROXY_IPS: "",
-  SSE_MAX_CONNECTIONS_PER_IP: 20,
 };
 
 let cached: Env | null = null;

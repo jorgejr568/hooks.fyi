@@ -10,7 +10,6 @@ model Hook {
   id              String   @id @default(uuid()) @db.Uuid
   name            String?  @db.VarChar(120)
   responderConfig Json?
-  ownerTokenHash  String?  @db.Char(64)
   createdAt       DateTime @default(now())
 
   requests Request[]

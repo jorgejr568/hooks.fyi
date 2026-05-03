@@ -41,7 +41,7 @@ export default function Home() {
       <div className="mt-12 grid w-full max-w-3xl grid-cols-1 gap-3 text-sm text-muted-foreground sm:grid-cols-3">
         <Feature
           label="Any method"
-          value="GET, POST, PUT, PATCH, DELETE, …"
+          value="GET, POST, PUT, PATCH, DELETE, &hellip;"
         />
         <Feature label="Any body" value="JSON, form, multipart, binary" />
         <Feature label="Any file" value="up to 50 MB per upload" />
@@ -56,7 +56,10 @@ function Feature({ label, value }: { label: string; value: string }) {
       <div className="text-xs uppercase tracking-wider text-muted-foreground/70">
         {label}
       </div>
-      <div className="mt-1 font-mono text-foreground">{value}</div>
+      <div
+        className="mt-1 font-mono text-foreground"
+        dangerouslySetInnerHTML={{ __html: value }}
+      />
     </div>
   );
 }
