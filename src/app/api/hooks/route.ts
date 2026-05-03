@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
+import { mintOwnerToken, hashOwnerToken } from "@/lib/auth/owner-token";
+import { buildOwnerCookieHeader } from "@/lib/auth/owner-cookie";
 import type { CreateHookResponse } from "@/types/api";
 
 const bodySchema = z.object({
@@ -19,8 +21,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid body" }, { status: 400 });
   }
 
+  const ownerToken = mintOwnerToken();
   const hook = await prisma.hook.create({
-    data: { name: payload.name ?? null },
+    data: {
+      name: payload.name ?? null,
+      ownerTokenHash: hashOwnerToken(ownerToken),
+    },
     select: { id: true, createdAt: true },
   });
 
@@ -29,6 +35,12 @@ export async function POST(req: Request) {
     url: `${env.NEXT_PUBLIC_APP_URL}/h/${hook.id}`,
     dashboardUrl: `${env.NEXT_PUBLIC_APP_URL}/${hook.id}`,
     createdAt: hook.createdAt.toISOString(),
+    ownerToken,
   };
-  return NextResponse.json(response, { status: 201 });
+  return NextResponse.json(response, {
+    status: 201,
+    headers: {
+      "set-cookie": buildOwnerCookieHeader(hook.id, ownerToken),
+    },
+  });
 }
