@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1.7
 
-FROM oven/bun:1.3-alpine@sha256:4de475389889577f346c636f956b42a5c31501b654664e9ae5726f94d7bb5349 AS base
+ARG BUN_VERSION=1.3-alpine
+
+FROM oven/bun:${BUN_VERSION} AS base
 WORKDIR /app
 
 # ---- dependencies ----
@@ -16,11 +18,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN bunx prisma generate
 RUN bun run build
-RUN find .next/standalone/.next -name "*.map" -delete \
- && find .next/server         -name "*.map" -delete
 
 # ---- runner ----
-FROM oven/bun:1.3-alpine@sha256:4de475389889577f346c636f956b42a5c31501b654664e9ae5726f94d7bb5349 AS runner
+FROM oven/bun:${BUN_VERSION} AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \

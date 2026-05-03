@@ -3,7 +3,6 @@ export interface CreateHookResponse {
   url: string;
   dashboardUrl: string;
   createdAt: string;
-  ownerToken: string;
 }
 
 export interface HookSummary {

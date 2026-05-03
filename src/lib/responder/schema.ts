@@ -21,25 +21,9 @@ const methodSchema = z.enum([
   "OPTIONS",
 ]);
 
-// RFC 7230 token chars for field-name.
-const HEADER_NAME_RE = /^[!#$%&'*+\-.0-9A-Z^_`a-z|~]+$/;
-
-// Forbid CR, LF, and NUL in field-value (header-injection bytes).
-const HEADER_VALUE_FORBIDDEN_RE = /[\r\n\0]/;
-
 const headerEntrySchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1)
-    .max(MAX_HEADER_NAME_LEN)
-    .regex(HEADER_NAME_RE, "invalid header name"),
-  value: z
-    .string()
-    .max(MAX_HEADER_VALUE_LEN)
-    .refine((v) => !HEADER_VALUE_FORBIDDEN_RE.test(v), {
-      message: "header value contains forbidden control character",
-    }),
+  name: z.string().trim().min(1).max(MAX_HEADER_NAME_LEN),
+  value: z.string().max(MAX_HEADER_VALUE_LEN),
 });
 
 const baseResponse = {
