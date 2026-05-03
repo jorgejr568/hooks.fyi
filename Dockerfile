@@ -1,8 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-ARG BUN_VERSION=1.3-alpine
-
-FROM oven/bun:${BUN_VERSION} AS base
+FROM oven/bun:1.3-alpine@sha256:4de475389889577f346c636f956b42a5c31501b654664e9ae5726f94d7bb5349 AS base
 WORKDIR /app
 
 # ---- dependencies ----
@@ -22,7 +20,7 @@ RUN find .next/standalone/.next -name "*.map" -delete \
  && find .next/server         -name "*.map" -delete
 
 # ---- runner ----
-FROM oven/bun:${BUN_VERSION} AS runner
+FROM oven/bun:1.3-alpine@sha256:4de475389889577f346c636f956b42a5c31501b654664e9ae5726f94d7bb5349 AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
