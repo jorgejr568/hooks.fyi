@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { deletePrefix } from "@/lib/s3";
+import { assertHookOwner } from "@/lib/auth/assert-owner";
 import type { HookSummary } from "@/types/api";
 
 const patchSchema = z.object({
@@ -31,6 +32,9 @@ export async function PATCH(
   ctx: { params: Promise<{ hookId: string }> },
 ) {
   const { hookId } = await ctx.params;
+  const denied = await assertHookOwner(req, hookId);
+  if (denied) return denied;
+
   let payload: z.infer<typeof patchSchema>;
   try {
     payload = patchSchema.parse(await req.json());
@@ -55,10 +59,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ hookId: string }> },
 ) {
   const { hookId } = await ctx.params;
+  const denied = await assertHookOwner(req, hookId);
+  if (denied) return denied;
+
   const hook = await prisma.hook.findUnique({
     where: { id: hookId },
     select: { id: true },
