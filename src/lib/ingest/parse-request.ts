@@ -1,6 +1,7 @@
 import busboy from "busboy";
 import { Readable } from "node:stream";
 import { logger } from "@/lib/log";
+import { clientIp } from "./client-ip";
 import {
   PayloadTooLargeError,
   type ParsedRequest,
@@ -68,12 +69,6 @@ function parseMultipart(
 
     Readable.from(buf).pipe(bb);
   });
-}
-
-function pickIp(headers: Headers): string | null {
-  const xff = headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return headers.get("x-real-ip") ?? null;
 }
 
 function collectQuery(url: URL): Record<string, string | string[]> {
@@ -219,7 +214,7 @@ export async function parseRequest(
     bodySize,
     files,
     rawBody,
-    ip: pickIp(req.headers),
+    ip: clientIp(req, null),
     userAgent: req.headers.get("user-agent"),
   };
 }

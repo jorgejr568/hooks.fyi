@@ -5,20 +5,15 @@ import { env } from "@/lib/env";
 import { mintOwnerToken, hashOwnerToken } from "@/lib/auth/owner-token";
 import { buildOwnerCookieHeader } from "@/lib/auth/owner-cookie";
 import { enforceFixedWindow } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/ingest/client-ip";
 import type { CreateHookResponse } from "@/types/api";
 
 const bodySchema = z.object({
   name: z.string().trim().max(120).optional(),
 });
 
-function clientIp(req: Request): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return req.headers.get("x-real-ip") ?? "unknown";
-}
-
 export async function POST(req: Request) {
-  const ip = clientIp(req);
+  const ip = clientIp(req, null);
   const rl = await enforceFixedWindow({
     key: `rl:create:${ip}`,
     limit: env.RATE_LIMIT_CREATE_PER_IP,

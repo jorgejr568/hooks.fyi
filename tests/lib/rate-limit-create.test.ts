@@ -31,7 +31,7 @@ function reqWith(ip: string) {
   return new Request("https://hooks.fyi/api/hooks", {
     method: "POST",
     body: "{}",
-    headers: { "x-forwarded-for": ip, "content-type": "application/json" },
+    headers: { "x-real-ip": ip, "content-type": "application/json" },
   });
 }
 

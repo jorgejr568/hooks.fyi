@@ -41,6 +41,12 @@ const schema = z.object({
     .int()
     .positive()
     .default(3600), // 20/hour by default
+  /**
+   * Comma-separated list of CIDRs or exact IPs whose X-Forwarded-For we trust.
+   * Empty (default) means do not trust XFF; client IP comes from the network
+   * peer / x-real-ip when present.
+   */
+  TRUSTED_PROXY_IPS: z.string().default(""),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -71,6 +77,7 @@ const buildPlaceholder: Env = {
   RATE_LIMIT_WINDOW_SECONDS: 60,
   RATE_LIMIT_CREATE_PER_IP: 20,
   RATE_LIMIT_CREATE_WINDOW_SECONDS: 3600,
+  TRUSTED_PROXY_IPS: "",
 };
 
 let cached: Env | null = null;
