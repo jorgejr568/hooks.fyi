@@ -108,3 +108,51 @@ describe("responderConfigSchema", () => {
     expect(r.success).toBe(true);
   });
 });
+
+describe("header injection", () => {
+  it("rejects CRLF in a header name", () => {
+    const r = safeParseResponderConfig({
+      default: {
+        ...baseDefault,
+        headers: [{ name: "X-Foo\r\nSet-Cookie: x=1", value: "v" }],
+      },
+      rules: [],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects spaces in a header name", () => {
+    const r = safeParseResponderConfig({
+      default: {
+        ...baseDefault,
+        headers: [{ name: "X Foo", value: "v" }],
+      },
+      rules: [],
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("accepts a normal header name", () => {
+    const r = safeParseResponderConfig({
+      default: {
+        ...baseDefault,
+        headers: [{ name: "X-Custom-Header", value: "v" }],
+      },
+      rules: [],
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects CR/LF/NUL in a header value", () => {
+    for (const ch of ["\r", "\n", "\0"]) {
+      const r = safeParseResponderConfig({
+        default: {
+          ...baseDefault,
+          headers: [{ name: "X-Foo", value: `bad${ch}injected` }],
+        },
+        rules: [],
+      });
+      expect(r.success).toBe(false);
+    }
+  });
+});
