@@ -18,6 +18,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN bunx prisma generate
 RUN bun run build
+RUN find .next/standalone/.next -name "*.map" -delete \
+ && find .next/server         -name "*.map" -delete
 
 # ---- runner ----
 FROM oven/bun:${BUN_VERSION} AS runner
