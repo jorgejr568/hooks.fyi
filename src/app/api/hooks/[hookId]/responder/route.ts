@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { assertHookOwner } from "@/lib/auth/assert-owner";
 import {
   responderConfigSchema,
   type ResponderConfig,
@@ -42,6 +43,8 @@ export async function PUT(
   if (!UUID_RE.test(hookId)) {
     return NextResponse.json({ error: "invalid hook id" }, { status: 400 });
   }
+  const denied = await assertHookOwner(req, hookId);
+  if (denied) return denied;
 
   let raw: unknown;
   try {
