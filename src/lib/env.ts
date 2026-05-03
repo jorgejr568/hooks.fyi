@@ -33,6 +33,14 @@ const schema = z.object({
   RATE_LIMIT_PER_HOOK: z.coerce.number().int().nonnegative().default(100),
   // Window size in seconds. Default is one minute → "100/min" out of the box.
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
+  // Max POST /api/hooks per IP in each window. Set to 0 to disable.
+  RATE_LIMIT_CREATE_PER_IP: z.coerce.number().int().nonnegative().default(20),
+  RATE_LIMIT_CREATE_WINDOW_SECONDS: z
+    .coerce
+    .number()
+    .int()
+    .positive()
+    .default(3600), // 20/hour by default
 });
 
 export type Env = z.infer<typeof schema>;
@@ -61,6 +69,8 @@ const buildPlaceholder: Env = {
   REDIS_URL: undefined,
   RATE_LIMIT_PER_HOOK: 100,
   RATE_LIMIT_WINDOW_SECONDS: 60,
+  RATE_LIMIT_CREATE_PER_IP: 20,
+  RATE_LIMIT_CREATE_WINDOW_SECONDS: 3600,
 };
 
 let cached: Env | null = null;

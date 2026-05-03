@@ -9,12 +9,12 @@ export type RateLimitResult = {
   resetSeconds: number;
 };
 
-export async function checkHookRateLimit(
-  hookId: string,
-): Promise<RateLimitResult> {
-  const limit = env.RATE_LIMIT_PER_HOOK;
-  const windowSeconds = env.RATE_LIMIT_WINDOW_SECONDS;
-
+export async function enforceFixedWindow(args: {
+  key: string;
+  limit: number;
+  windowSeconds: number;
+}): Promise<RateLimitResult> {
+  const { key, limit, windowSeconds } = args;
   if (limit <= 0) {
     return {
       allowed: true,
@@ -23,7 +23,6 @@ export async function checkHookRateLimit(
       resetSeconds: windowSeconds,
     };
   }
-
   const redis = getRedis();
   if (!redis) {
     return {
@@ -33,8 +32,6 @@ export async function checkHookRateLimit(
       resetSeconds: windowSeconds,
     };
   }
-
-  const key = `rl:hook:${hookId}`;
   try {
     // Fixed-window counter. On the first hit of a window INCR returns 1 and
     // we seed the TTL; subsequent hits within the same window just bump the
@@ -48,9 +45,9 @@ export async function checkHookRateLimit(
     const remaining = Math.max(0, limit - count);
     return { allowed: count <= limit, limit, remaining, resetSeconds };
   } catch (err) {
-    // Fail-open: a broken Redis must not take down the ingest path.
+    // Fail-open: a broken Redis must not take down the calling path.
     logger.warn(
-      { err: (err as Error).message, hookId },
+      { err: (err as Error).message, key },
       "rate limit check failed; allowing request",
     );
     return {
@@ -60,4 +57,14 @@ export async function checkHookRateLimit(
       resetSeconds: windowSeconds,
     };
   }
+}
+
+export async function checkHookRateLimit(
+  hookId: string,
+): Promise<RateLimitResult> {
+  return enforceFixedWindow({
+    key: `rl:hook:${hookId}`,
+    limit: env.RATE_LIMIT_PER_HOOK,
+    windowSeconds: env.RATE_LIMIT_WINDOW_SECONDS,
+  });
 }

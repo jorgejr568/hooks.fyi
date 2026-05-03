@@ -4,13 +4,41 @@ import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 import { mintOwnerToken, hashOwnerToken } from "@/lib/auth/owner-token";
 import { buildOwnerCookieHeader } from "@/lib/auth/owner-cookie";
+import { enforceFixedWindow } from "@/lib/rate-limit";
 import type { CreateHookResponse } from "@/types/api";
 
 const bodySchema = z.object({
   name: z.string().trim().max(120).optional(),
 });
 
+function clientIp(req: Request): string {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
+
 export async function POST(req: Request) {
+  const ip = clientIp(req);
+  const rl = await enforceFixedWindow({
+    key: `rl:create:${ip}`,
+    limit: env.RATE_LIMIT_CREATE_PER_IP,
+    windowSeconds: env.RATE_LIMIT_CREATE_WINDOW_SECONDS,
+  });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "rate limit exceeded", retryAfter: rl.resetSeconds },
+      {
+        status: 429,
+        headers: {
+          "retry-after": String(rl.resetSeconds),
+          "x-ratelimit-limit": String(rl.limit),
+          "x-ratelimit-remaining": "0",
+          "x-ratelimit-reset": String(rl.resetSeconds),
+        },
+      },
+    );
+  }
+
   let payload: z.infer<typeof bodySchema> = {};
   try {
     const text = await req.text();
