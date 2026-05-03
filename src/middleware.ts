@@ -1,54 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-// Hosts Cloudflare's edge injects scripts from. We deploy behind Cloudflare,
-// which adds the Web Analytics beacon to the response after we've sent it.
-// `'strict-dynamic'` would force us to nonce the beacon (we can't — it's
-// injected post-response), so we skip strict-dynamic and rely on host
-// allowlisting instead. The nonce still locks down Next's own inline
-// hydration scripts.
-const CLOUDFLARE_SCRIPT_HOSTS = [
-  "https://static.cloudflareinsights.com",
-];
-
-function buildCsp(nonce: string): string {
-  const scriptSrc = [
-    "'self'",
-    `'nonce-${nonce}'`,
-    ...CLOUDFLARE_SCRIPT_HOSTS,
-  ].join(" ");
-  const connectSrc = ["'self'", ...CLOUDFLARE_SCRIPT_HOSTS].join(" ");
-
-  return (
-    "default-src 'self'; " +
-    "img-src 'self' data: blob:; " +
-    "font-src 'self' data:; " +
-    `style-src 'self' 'nonce-${nonce}' 'unsafe-inline'; ` +
-    `script-src ${scriptSrc}; ` +
-    `connect-src ${connectSrc}; ` +
-    "frame-ancestors 'none'; " +
-    "base-uri 'self';"
-  );
-}
-
-function isHtmlLikePath(pathname: string): boolean {
-  if (pathname.startsWith("/h/")) return false;
-  if (pathname.startsWith("/api/files/")) return false;
-  return true;
-}
+// Note: a Content-Security-Policy was attempted in earlier revisions but
+// repeatedly conflicted with Cloudflare-injected inline scripts (Rocket
+// Loader, Email Obfuscation, inline beacon shims) that arrive after our
+// response leaves the origin and therefore cannot carry our per-request
+// nonce. CSP3 modern-browser semantics also means 'unsafe-inline' is
+// ignored once a nonce is present, so a fallback strategy doesn't help.
+// Re-introducing CSP requires either disabling those Cloudflare features
+// for the dashboard route, or pre-hashing the known injected scripts —
+// tracked as a follow-up. The other four headers below cover the bulk
+// of audit finding F9 (CVSS 3.7).
 
 export function middleware(request: NextRequest) {
   const url = new URL(request.url);
-  const htmlLike = isHtmlLikePath(url.pathname);
-
-  // Generate a per-request nonce when we'll attach a CSP. Next.js reads
-  // `x-nonce` from the forwarded request headers and stamps it onto the
-  // inline scripts it emits for hydration/streaming.
-  const nonce = htmlLike ? crypto.randomUUID().replace(/-/g, "") : null;
-
-  const requestHeaders = new Headers(request.headers);
-  if (nonce) requestHeaders.set("x-nonce", nonce);
-
-  const res = NextResponse.next({ request: { headers: requestHeaders } });
+  const res = NextResponse.next();
 
   res.headers.set("x-content-type-options", "nosniff");
   res.headers.set("x-frame-options", "DENY");
@@ -59,10 +24,6 @@ export function middleware(request: NextRequest) {
       "strict-transport-security",
       "max-age=31536000; includeSubDomains",
     );
-  }
-
-  if (nonce) {
-    res.headers.set("content-security-policy", buildCsp(nonce));
   }
 
   return res;
