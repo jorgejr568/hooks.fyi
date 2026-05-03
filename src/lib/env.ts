@@ -47,6 +47,8 @@ const schema = z.object({
    * peer / x-real-ip when present.
    */
   TRUSTED_PROXY_IPS: z.string().default(""),
+  // Per-IP cap on concurrent SSE stream connections. 0 disables the cap.
+  SSE_MAX_CONNECTIONS_PER_IP: z.coerce.number().int().nonnegative().default(20),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -78,6 +80,7 @@ const buildPlaceholder: Env = {
   RATE_LIMIT_CREATE_PER_IP: 20,
   RATE_LIMIT_CREATE_WINDOW_SECONDS: 3600,
   TRUSTED_PROXY_IPS: "",
+  SSE_MAX_CONNECTIONS_PER_IP: 20,
 };
 
 let cached: Env | null = null;
