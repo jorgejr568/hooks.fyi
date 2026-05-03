@@ -14,9 +14,13 @@ describe("middleware security headers", () => {
     expect(res.headers.get("strict-transport-security")).toContain(
       "max-age=",
     );
-    expect(res.headers.get("content-security-policy")).toContain(
-      "frame-ancestors 'none'",
-    );
+    const csp = res.headers.get("content-security-policy")!;
+    expect(csp).toContain("frame-ancestors 'none'");
+    // The script-src directive carries a per-request nonce so Next's
+    // inline hydration scripts are allowed without 'unsafe-inline'.
+    expect(csp).toMatch(/script-src [^;]*'nonce-[a-f0-9]+'/);
+    // Cloudflare's edge-injected analytics beacon is host-allowlisted.
+    expect(csp).toContain("https://static.cloudflareinsights.com");
   });
 
   it("omits CSP on /h/* (webhook ingest)", async () => {
